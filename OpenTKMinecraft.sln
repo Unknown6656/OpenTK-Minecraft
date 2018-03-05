@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27130.2036
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenTKTestRenderer", "OpenTKTestRenderer\OpenTKTestRenderer.csproj", "{2C675386-A0FC-4EAC-A2C2-E53FB6C4E35A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenTKMinecraft", "OpenTKMinecraft\OpenTKMinecraft.csproj", "{2C675386-A0FC-4EAC-A2C2-E53FB6C4E35A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

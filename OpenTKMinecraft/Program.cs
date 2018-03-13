@@ -7,9 +7,10 @@ using System;
 
 using OpenTK.Graphics.OpenGL4;
 using OpenTK;
-using OpenTKTestRenderer.Components;
 
-namespace OpenTKTestRenderer
+using OpenTKMinecraft.Components;
+
+namespace OpenTKMinecraft
 {
     public static unsafe class Program
     {
@@ -22,9 +23,10 @@ namespace OpenTKTestRenderer
         {
             int ret = 0;
 
+            InnerMain(args, ref ret);
+
             try
             {
-                InnerMain(args, ref ret);
             }
             catch (Exception ex)
             {

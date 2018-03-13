@@ -105,7 +105,7 @@ namespace OpenTKMinecraft.Components
     public unsafe sealed class Lights
         : Renderable
     {
-        public const int MAX_LIGHTS = 128;
+        public const int MAX_LIGHTS = 256;
         public readonly Light[] LightData = new Light[MAX_LIGHTS];
         private int _index, _buffer, _bindingpoint;
 
@@ -134,7 +134,7 @@ namespace OpenTKMinecraft.Components
             base.Render();
             int i = 0;
 
-            while ((i < 0) && LightData[i].IsActive)
+            while ((i < MAX_LIGHTS) && LightData[i].IsActive)
                 ++i;
 
             GL.Uniform1(31, i);

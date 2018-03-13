@@ -21,7 +21,7 @@
 
 #define MAX_GLOSS 255
 
-#define MAX_LIGHTS 128
+#define MAX_LIGHTS 256
 
 // compare to OpenTKMinecraft::Components::LightMode
 #define LIGHT_AMBIENT 0
@@ -116,26 +116,28 @@ vec3 getrawlightcolor(vec3 p, Light l)
     {
         vec3 L = getlightdir(p, l);
         vec3 LD = normalize(l.Direction.xyz);
-        float Il = dot(L, -LD);
+        float IL = 1;
+        // TODO: Light intensity dependending on direction?
+        // IL = max(dot(L, -LD), 0);
 
         if (l.Mode == LIGHT_AMBIENT)
-            Il = 1;
+            IL = 1;
         else if (l.Mode == LIGHT_POINT)
         {
             if (l.Falloff > 0)
-                Il *= pow(abs(length(p - l.Position.xyz)), -2) / l.Falloff;
+                IL *= pow(abs(length(p - l.Position.xyz)), -2) / l.Falloff;
         }
         else if (l.Mode == LIGHT_SPOT)
         {
-            Il = pow(Il, l.Exponent);
+            IL = pow(IL, l.Exponent);
             
             if (l.Falloff > 0)
-                Il *= pow(abs(length(p - l.Position.xyz)), -2) / l.Falloff;
+                IL *= pow(abs(length(p - l.Position.xyz)), -2) / l.Falloff;
         }
 
-        Il *= l.Color.a;
+        IL *= l.Color.a;
         
-        return l.Color.rgb * Il;
+        return l.Color.rgb * IL;
     }
     else
         return vec3(0);
@@ -143,47 +145,38 @@ vec3 getrawlightcolor(vec3 p, Light l)
 
 void main(void)
 {
-    vec3 N = _texture(TEX_NORM, vs_texcoord, MODE_CLAMP).xyz;
-    vec3 V = vs_TBN * vs_eyedir;
-    
-
-
     vec4 diffuse = _texture(TEX_DIFF, vs_texcoord, MODE_CLAMP);
     vec4 ambient = _texture(TEX_AMBT, vs_texcoord, MODE_CLAMP);
     vec4 glow = _texture(TEX_GLOW, vs_texcoord, MODE_CLAMP);
     vec3 specular = _texture(TEX_SPEC, vs_texcoord, MODE_CLAMP).rgb;
     vec3 gloss = _texture(TEX_GLSS, vs_texcoord, MODE_CLAMP).rgb * MAX_GLOSS;
+    vec3 N = _texture(TEX_NORM, vs_texcoord, MODE_CLAMP).xyz;
+    vec3 V = vs_TBN * vs_eyedir;
+    vec3 H = normalize(V + N);
     
-    vec4 outcolor = ambient * ambient_brightness;
-
-    outcolor = vec4(
-        outcolor.r * diffuse.r,
-        outcolor.g * diffuse.g,
-        outcolor.b * diffuse.b,
-        outcolor.a * diffuse.a
-    );
+    vec4 outcolor = ambient * ambient_brightness * diffuse;
     
-
-    for (int i = 0, maxl = max(light_count, MAX_LIGHTS); i < maxl; ++i)
+    for (int i = 0, maxl = min(light_count, MAX_LIGHTS); i < maxl; ++i)
     {
         Light _light = SceneLights.lights[i];
+
         vec3 light_color = getrawlightcolor(vs_worldpos, _light);
         vec3 L = vs_TBN * normalize(getlightdir(vs_worldpos, _light));
-        vec3 R = 2 * dot(L, N) * N - L;
-        float difffac = dot(L, N);
-        float glossfac = dot(R, V);
+        vec3 R = reflect(L, N);
+        float LN = max(0, dot(L, N));
+        float RV = max(0, dot(R, V));
 
-        vec3 gls = vec3(
-            pow(glossfac, gloss.r),
-            pow(glossfac, gloss.g),
-            pow(glossfac, gloss.b)
+        vec3 gloss_factor = vec3(
+            pow(RV, gloss.r),
+            pow(RV, gloss.g),
+            pow(RV, gloss.b)
         );
-        outcolor += vec4(
-            max(0, light_color.r * specular.r * gls.r  +  difffac * light_color.r * diffuse.r),
-            max(0, light_color.g * specular.g * gls.g  +  difffac * light_color.g * diffuse.g),
-            max(0, light_color.b * specular.b * gls.b  +  difffac * light_color.b * diffuse.b),
-            0
-        );
+        vec3 contribution = light_color * diffuse.xyz * LN;
+
+        // TODO : glossiness
+        // contribution += light_color * specular * gloss_factor;
+                          
+        outcolor += vec4(contribution * diffuse.a, 0);
     }
     
     color = vec4(outcolor.xyz * (1 - glow.a) + outcolor.xyz * glow.a, outcolor.a + glow.a);

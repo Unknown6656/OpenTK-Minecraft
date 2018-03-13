@@ -1,14 +1,8 @@
-﻿using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
+﻿using System.Diagnostics;
 using System.Text;
-using System.IO;
 using System;
 
 using OpenTK.Graphics.OpenGL4;
-using OpenTK;
-
-using OpenTKMinecraft.Components;
 
 namespace OpenTKMinecraft
 {
@@ -23,10 +17,15 @@ namespace OpenTKMinecraft
         {
             int ret = 0;
 
-            InnerMain(args, ref ret);
-
             try
             {
+                using (MainWindow win = new MainWindow(args)
+                {
+                    Width = 1280,
+                    Height = 720,
+                    Title = $"Test renderer [OpenGL v.{GL.GetString(StringName.Version)}]"
+                })
+                    win.Run(120);
             }
             catch (Exception ex)
             {
@@ -54,17 +53,6 @@ namespace OpenTKMinecraft
             }
 
             return ret;
-        }
-
-        public static void InnerMain(string[] args, ref int exit)
-        {
-            using (MainWindow win = new MainWindow(args)
-            {
-                Width = 1280,
-                Height = 720,
-                Title = $"Test renderer [OpenGL v.{GL.GetString(StringName.Version)}]"
-            })
-                win.Run(120);
         }
     }
 }

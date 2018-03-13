@@ -1,5 +1,5 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks;
+﻿using System.Runtime.InteropServices;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System;
@@ -7,7 +7,6 @@ using System;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Graphics;
 using OpenTK;
-using System.Runtime.InteropServices;
 
 namespace OpenTKMinecraft.Components
 {

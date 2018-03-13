@@ -28,7 +28,7 @@ namespace OpenTKMinecraft.Components
         public Scene(GameWindow win, ShaderProgram program)
             : base(program, 0)
         {
-            Brightness = .5f;
+            Brightness = .25f;
             Lights = new Lights(program);
             World = new World(this);
             Camera = null;
@@ -69,6 +69,7 @@ namespace OpenTKMinecraft.Components
             GL.Uniform1(12, Camera.FocalDistance);
             GL.Uniform1(30, Math.Max(0, Math.Min(Brightness, 1)));
 
+            Lights.Render();
             World.Render(Camera);
         }
 

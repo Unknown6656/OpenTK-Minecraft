@@ -12,7 +12,7 @@ namespace OpenTKMinecraft.Components
     public interface IShaderTarget
     {
         ShaderProgram Program { get; }
-        GameWindow Window { get; }
+        MainWindow Window { get; }
 
         void Render(double time, float width, float height);
     }

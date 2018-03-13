@@ -50,18 +50,27 @@ namespace OpenTKMinecraft.Components
             ID = _gameobjectcounter++;
         }
 
-        public virtual void Update(double time, double delta) => Position += Direction * (Velocity * (float)delta);
+        public virtual void Update(double time, double delta)
+        {
+            Position += Direction * (Velocity * (float)delta);
+
+            UpdateModelView();
+        }
+
+        private void UpdateModelView() =>
+            _modelview = Matrix4.CreateScale(Scale.X, Scale.Y, Scale.Z)
+                       * Matrix4.CreateRotationZ(Rotation.X)
+                       * Matrix4.CreateRotationY(Rotation.Y)
+                       * Matrix4.CreateRotationX(Rotation.Z)
+                       * Matrix4.CreateTranslation(Position.X, Position.Y, Position.Z);
 
         public virtual void Render(Camera camera)
         {
             Model.Program.Use();
             Model.Bind();
 
-            _modelview = Matrix4.CreateScale(Scale.X, Scale.Y, Scale.Z)
-                       * Matrix4.CreateRotationZ(Rotation.X)
-                       * Matrix4.CreateRotationY(Rotation.Y)
-                       * Matrix4.CreateRotationX(Rotation.Z)
-                       * Matrix4.CreateTranslation(Position.X, Position.Y, Position.Z);
+            UpdateModelView();
+
             _projection = camera.Projection;
             _mnormal = Matrix4.Transpose(Matrix4.Invert(_modelview));
 

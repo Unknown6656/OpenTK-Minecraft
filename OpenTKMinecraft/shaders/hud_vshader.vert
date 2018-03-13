@@ -5,6 +5,11 @@ layout (location = 1) in vec3 normal;
 layout (location = 2) in vec2 texcoord;
 layout (location = 3) in vec4 color;
 
+layout (location = 6) uniform bool paused;
+layout (location = 7) in float time;
+layout (location = 8) uniform float window_width;
+layout (location = 9) uniform float window_height;
+
 
 out vec3 vs_position;
 out vec3 vs_normal;

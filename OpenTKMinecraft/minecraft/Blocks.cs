@@ -30,6 +30,13 @@ namespace OpenTKMinecraft.Minecraft
                 ("resources/grass-spec.png", TextureType.Specular),
                 ("resources/grass-norm.png", TextureType.Normal)
             ),
+            [BlockMaterial.Sand] = new BlockInfo("Sand",
+                ("resources/sand-diff.png", TextureType.Diffuse),
+                ("resources/sand-disp.png", TextureType.Displacement),
+                ("resources/sand-ambt.png", TextureType.AmbientOcclusion),
+                ("resources/sand-spec.png", TextureType.Specular),
+                ("resources/sand-norm.png", TextureType.Normal)
+            ) {  Gravity = true },
 
             // TODO
         };
@@ -48,5 +55,6 @@ namespace OpenTKMinecraft.Minecraft
         Air = 0,
         Stone = 1,
         Grass = 2,
+        Sand = 3,
     }
 }

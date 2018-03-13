@@ -40,6 +40,7 @@ struct Light
     uint IsActive;
 };
 
+layout (location = 6) uniform bool paused;
 layout (location = 8) uniform float window_width;
 layout (location = 9) uniform float window_height;
 layout (location = 10) uniform vec3 cam_position;
@@ -116,10 +117,8 @@ vec3 getrawlightcolor(vec3 p, Light l)
     {
         vec3 L = getlightdir(p, l);
         vec3 LD = normalize(l.Direction.xyz);
-        float IL = 1;
-        // TODO: Light intensity dependending on direction?
-        // IL = max(dot(L, -LD), 0);
-
+        float IL = max(dot(L, -LD), 0); // TODO: Light intensity dependending on direction?
+        
         if (l.Mode == LIGHT_AMBIENT)
             IL = 1;
         else if (l.Mode == LIGHT_POINT)
@@ -180,4 +179,13 @@ void main(void)
     }
     
     color = vec4(outcolor.xyz * (1 - glow.a) + outcolor.xyz * glow.a, outcolor.a + glow.a);
+
+    if (paused)
+    {
+        float gray = dot(color.rgb, vec3(0.299, 0.587, 0.114));
+
+        gray += sin(vs_time) / 15;
+
+        color = vec4(gray, gray, gray, color.a);
+    }
 }

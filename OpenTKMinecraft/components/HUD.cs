@@ -17,12 +17,12 @@ namespace OpenTKMinecraft.Components
     {
         public double LastFPS { get; private set; }
         public ShaderProgram Program { get; }
-        public GameWindow Window { get; }
+        public MainWindow Window { get; }
 
         private VertexBuffer<HUDVertex> _crosshair;
 
 
-        public HUD(GameWindow win, ShaderProgram prog)
+        public HUD(MainWindow win, ShaderProgram prog)
         {
             Window = win;
             Program = prog;
@@ -31,10 +31,10 @@ namespace OpenTKMinecraft.Components
 
             _crosshair = new VertexBuffer<HUDVertex>(new[]
             {
-                new HUDVertex(-.1f, 0, Color4.Wheat),
-                new HUDVertex(.1f, 0, Color4.Wheat),
-                new HUDVertex(0, -.1f, Color4.Wheat),
-                new HUDVertex(0, .1f, Color4.Wheat),
+                new HUDVertex(-.1f, 0, -1, Color4.Wheat),
+                new HUDVertex(.1f, 0, -1, Color4.Wheat),
+                new HUDVertex(0, -.1f, -1, Color4.Wheat),
+                new HUDVertex(0, .1f, -1, Color4.Wheat),
             }, 0, PrimitiveType.Lines, new[]
             {
                 (0, VertexAttribType.Float, 3),
@@ -53,8 +53,13 @@ namespace OpenTKMinecraft.Components
         {
             Program.Use();
 
-            GL.LineWidth(3);
-            GL.PointSize(3);
+            GL.Viewport(0, 0, Window.Width, Window.Height);
+            GL.LineWidth(5);
+            GL.PointSize(5);
+            GL.Uniform1(6, Window._paused ? 1 : 0);
+            GL.VertexAttrib1(7, time);
+            GL.Uniform1(8, width);
+            GL.Uniform1(9, height);
 
             _crosshair.Render();
         }
@@ -72,11 +77,13 @@ namespace OpenTKMinecraft.Components
     {
         private readonly int _array, _buffer, _count;
         private readonly PrimitiveType _type;
+        private readonly T[] _vert;
 
 
         public VertexBuffer(T[] vertices, int locoffset, PrimitiveType type, params (int offset, VertexAttribType type, int size)[] layout)
         {
             _type = type;
+            _vert = vertices;
             _count = vertices.Length;
             _buffer = GL.GenBuffer();
             _array = GL.GenVertexArray();

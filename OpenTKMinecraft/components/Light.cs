@@ -81,7 +81,7 @@ namespace OpenTKMinecraft.Components
             Mode = LightMode.Ambient,
         };
 
-        public static Light CreatePointLight(Vector3 position, Color4 color, float intensity = 1, float falloff = .01f) => new Light
+        public static Light CreatePointLight(Vector3 position, Color4 color, float intensity = 1, float falloff = .02f) => new Light
         {
             Exponent = 0,
             Falloff = falloff,
@@ -90,6 +90,18 @@ namespace OpenTKMinecraft.Components
             Position = position,
             Intensity = intensity,
             Mode = LightMode.PointLight,
+        };
+
+        public static Light CreateSpotLight(Vector3 position, Vector3 direction, Color4 color, float intensity = 1, float falloff = .02f, float exponent = 100) => new Light
+        {
+            Color = color,
+            Falloff = falloff,
+            Intensity = intensity,
+            Direction = direction,
+            Position = position,
+            IsActive = true,
+            Mode = LightMode.SpotLight,
+            Exponent = exponent
         };
     }
 

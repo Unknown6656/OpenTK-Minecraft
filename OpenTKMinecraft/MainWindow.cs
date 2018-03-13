@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using System.Collections.Generic;
 using System.Drawing.Imaging;
 using System.Diagnostics;
+using System.Threading;
 using System.Drawing;
 using System.Linq;
 using System.Text;
@@ -31,6 +32,7 @@ namespace OpenTKMinecraft
         public string[] Arguments { get; }
 
         private int _mousex, _mousey;
+        public bool _paused;
         private Scene _scene;
         private HUD _hud;
 
@@ -59,8 +61,9 @@ namespace OpenTKMinecraft
             {
                 Camera = new PlayerCamera(),
             };
-            _scene.Lights.LightData[1] = Light.CreateEnvironmentLight(new Vector3(3, 2, 10), Color.White);
             _scene.Lights.LightData[0] = Light.CreatePointLight(new Vector3(0, 0, 2), Color.Wheat, 10);
+            _scene.Lights.LightData[1] = Light.CreateEnvironmentLight(new Vector3(3, 2, 10), Color.Gold);
+            //_scene.Lights.LightData[0] = Light.CreateSpotLight(new Vector3(0, 5, 5), new Vector3(0, -1, 0), Color.Red, .5f);
 
             BuildScene();
             ResetCamera();
@@ -81,11 +84,21 @@ namespace OpenTKMinecraft
                         block.Material = BlockMaterial.Stone;
                     }
 
-            int side = 6;
+            int side = 9;
 
             for (int i = -side; i <= side; ++i)
                 for (int j = -side; j <= side; ++j)
-                    _scene.World[i, (int)(Sin((i + j) / 3) * 1.5), j].Material = BlockMaterial.Grass;
+                {
+                    int y = (int)(Sin((i + Sin(i) / 3 - j) / 3) * 1.5);
+                    
+                    if ((i * i + j * j) < 15)
+                    {
+                        _scene.World[i, y, j].Material = BlockMaterial.Sand;
+                        _scene.World[i, y - 1, j].Material = BlockMaterial.Grass;
+                    }
+                    else
+                        _scene.World[i, y, j].Material = BlockMaterial.Grass;
+                }
 
             // _scene.World.PlaceCustomBlock(4, 1, 0, WavefrontFile.FromPath("resources/center-piece.obj"));
         }
@@ -116,6 +129,9 @@ namespace OpenTKMinecraft
 
             Time += e.Time;
 
+            if (_paused)
+                return;
+
             _scene.Lights.LightData[0].Position = Matrix3.CreateRotationY((float)Time) * new Vector3(0, 2, 4);
 
             _hud.Update(Time, e.Time);
@@ -144,6 +160,23 @@ namespace OpenTKMinecraft
             int δx = _mousex - mstate.X;
             int δy = _mousey - mstate.Y;
             float speed = .1f;
+
+            if (kstate.IsKeyDown(Key.P))
+            {
+                CursorVisible = (_paused = !_paused);
+
+                Thread.Sleep(100);
+
+                if (!_paused)
+                {
+                    _mousex = mstate.X;
+                    _mousey = mstate.Y;
+                }
+
+                return;
+            }
+            else if (_paused)
+                return;
 
             if (kstate.IsKeyDown(Key.AltLeft))
                 speed *= 10;

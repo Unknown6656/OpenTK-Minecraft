@@ -20,12 +20,12 @@ namespace OpenTKMinecraft.Components
     {
         public Camera Camera { set; get; }
         public float Brightness { set; get; }
-        public GameWindow Window { get; }
+        public MainWindow Window { get; }
         public Lights Lights { get; }
         public World World { get; }
 
 
-        public Scene(GameWindow win, ShaderProgram program)
+        public Scene(MainWindow win, ShaderProgram program)
             : base(program, 0)
         {
             Brightness = .25f;
@@ -61,6 +61,7 @@ namespace OpenTKMinecraft.Components
             GL.PointSize(1);
             // GL.PatchParameter(PatchParameterInt.PatchVertices, 4);
 
+            GL.Uniform1(6, Window._paused ? 1 : 0);
             GL.VertexAttrib1(7, time);
             GL.Uniform1(8, width);
             GL.Uniform1(9, height);

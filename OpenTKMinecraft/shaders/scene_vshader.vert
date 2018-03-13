@@ -6,7 +6,7 @@ layout (location = 2) in vec4 color;
 layout (location = 3) in vec3 tangent;
 layout (location = 4) in vec3 bitangent;
 layout (location = 5) uniform int tex_size;
-
+layout (location = 6) uniform bool paused;
 layout (location = 7) in float time;
 layout (location = 8) uniform float window_width;
 layout (location = 9) uniform float window_height;

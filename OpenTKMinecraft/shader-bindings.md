@@ -7,11 +7,11 @@ _This is an internal documentation document_
 |----------|-----------|---------|
 | location `0` | `vec3` | Vertex position in object space |
 | location `1` | `vec3` | Vertex normal in object space |
-| location `2` | `vec4` | Vertex color (argb) or texture coordinates (rg -> yx) |
+| location `2` | `vec4` | Vertex color (rgba) or texture coordinates (rg -> yx) |
 | location `3` | `vec3` | Vertex tangent (right-hand-rule `TBN`) in object space |
 | location `4` | `vec3` | Vertex bitangent (right-hand-rule `TBN`) in object space |
 | location `5` | `int` | Texture size (e.g. `16` for 16x16) |
-| | | |
+| location `6` | `bool` | Indicates whether the game is paused |
 | location `7` | `float` | Time (in seconds) |
 | location `8` | `float` | Host window width (in px, with border) |
 | location `9` | `float` | Host window height (in px, with border) |
@@ -31,6 +31,14 @@ _This is an internal documentation document_
 
 | Location | Data Type | Content |
 |----------|-----------|---------|
+| location `0` | `vec3` | Vertex position |
+| location `1` | `vec3` | Vertex normal |
+| location `2` | `vec2` | Vertex texture coordinates (uv) |
+| location `3` | `vec4` | Vertex color (rgba) |
 | | | |
+| location `6` | `bool` | Indicates whether the game is paused |
+| location `7` | `float` | Time (in seconds) |
+| location `8` | `float` | Host window width (in px, with border) |
+| location `9` | `float` | Host window height (in px, with border) |
 | | | |
 | | | |

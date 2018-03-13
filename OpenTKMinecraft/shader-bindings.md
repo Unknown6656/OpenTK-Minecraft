@@ -23,7 +23,8 @@ _This is an internal documentation document_
 | location `21`| `mat4` | Model-View vertex matrix |
 | location `22`| `mat4` | Model-View normal matrix |
 | | | |
-| location `30`| `mat4` | Ambient brightness [0..1] |
+| location `30`| `float` | Ambient brightness [0..1] |
+| location `31`| `int` | Light count |
 | binding `1`, std140| `LightBlock::Light[]` | Light data |
 
 ## `hud_xshader.xxxx`

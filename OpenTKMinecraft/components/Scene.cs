@@ -19,6 +19,7 @@ namespace OpenTKMinecraft.Components
         , IShaderTarget
     {
         public Camera Camera { set; get; }
+        public float Brightness { set; get; }
         public GameWindow Window { get; }
         public Lights Lights { get; }
         public World World { get; }
@@ -27,6 +28,7 @@ namespace OpenTKMinecraft.Components
         public Scene(GameWindow win, ShaderProgram program)
             : base(program, 0)
         {
+            Brightness = .5f;
             Lights = new Lights(program);
             World = new World(this);
             Camera = null;
@@ -65,6 +67,7 @@ namespace OpenTKMinecraft.Components
             GL.Uniform3(10, ref campos);
             GL.Uniform3(11, ref camtarg);
             GL.Uniform1(12, Camera.FocalDistance);
+            GL.Uniform1(30, Math.Max(0, Math.Min(Brightness, 1)));
 
             World.Render(Camera);
         }

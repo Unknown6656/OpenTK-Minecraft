@@ -19,6 +19,7 @@ layout (location = 21) uniform mat4 model_view;
 layout (location = 22) uniform mat4 mat_normal;
 
 layout (location = 30) uniform float ambient_brightness;
+layout (location = 31) uniform int light_count;
 
 out float vs_time;
 out vec2 vs_texcoord;

@@ -107,7 +107,7 @@ namespace OpenTKMinecraft.Components
     {
         public const int MAX_LIGHTS = 128;
         public readonly Light[] LightData = new Light[MAX_LIGHTS];
-        private int _index, _buffer;
+        private int _index, _buffer, _bindingpoint;
 
 
         public Lights(ShaderProgram program)
@@ -115,32 +115,29 @@ namespace OpenTKMinecraft.Components
         {
             program.Use();
 
-            _index = GL.GetUniformBlockIndex(program.ID, "LightBlock");
             _buffer = GL.GenBuffer();
-
-            GL.GetActiveUniformBlock(program.ID, _index, ActiveUniformBlockParameter.UniformBlockDataSize, out int datsz);
-
-            if (datsz != sizeof(Light) * MAX_LIGHTS)
-                throw new InvalidProgramException("Some internal error occured resulting in the shader not being capable of accepting the light data.");
-
-            GL.GetError(); GL.GetError();
-
-            GL.UniformBlockBinding(program.ID, _index, _buffer);
-            GL.BindBuffer(BufferTarget.UniformBuffer, _buffer);
-            GL.BindBufferBase(BufferRangeTarget.UniformBuffer, _index, _buffer);
-            GL.BufferData(BufferTarget.UniformBuffer, datsz, LightData, BufferUsageHint.DynamicDraw);
-            GL.BindBufferRange(BufferRangeTarget.UniformBuffer, _index, _buffer, IntPtr.Zero, datsz);
-
-            var err = GL.GetError();
+            _index = GL.GetUniformBlockIndex(program.ID, "LightBlock");
+            _bindingpoint = 1;
         }
 
         public override void Bind()
         {
             GL.BindBuffer(BufferTarget.UniformBuffer, _buffer);
-            GL.BindBufferBase(BufferRangeTarget.UniformBuffer, _index, _buffer);
-            // GL.BufferData(BufferTarget.UniformBuffer, sizeof(Light) * MAX_LIGHTS, LightData, BufferUsageHint.DynamicDraw);
-            GL.BufferSubData(BufferTarget.UniformBuffer, IntPtr.Zero, sizeof(Light) * MAX_LIGHTS, LightData);
-            // GL.BindBuffer(BufferTarget.UniformBuffer, 0);
+            GL.BufferData(BufferTarget.UniformBuffer, sizeof(Light) * MAX_LIGHTS, LightData, BufferUsageHint.DynamicDraw);
+            GL.BindBuffer(BufferTarget.UniformBuffer, 0);
+            GL.BindBufferBase(BufferRangeTarget.UniformBuffer, _bindingpoint, _buffer);
+            GL.UniformBlockBinding(Program.ID, _index, _bindingpoint);
+        }
+
+        public override void Render()
+        {
+            base.Render();
+            int i = 0;
+
+            while ((i < 0) && LightData[i].IsActive)
+                ++i;
+
+            GL.Uniform1(31, i);
         }
 
         protected override void Dispose(bool disposing)

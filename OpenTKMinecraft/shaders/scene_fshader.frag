@@ -51,7 +51,8 @@ layout (location = 21) uniform mat4 model_view;
 layout (location = 22) uniform mat4 mat_normal;
 
 layout (location = 30) uniform float ambient_brightness;
-layout (std140, shared, binding = 1) uniform LightBlock {
+layout (location = 31) uniform int light_count;
+layout (std140, binding = 1) uniform LightBlock {
     Light lights[MAX_LIGHTS];
 } SceneLights;
 
@@ -111,7 +112,7 @@ vec3 getlightdir(vec3 p, Light l)
 
 vec3 getrawlightcolor(vec3 p, Light l)
 {
-    if (l.IsActive)
+    if (l.IsActive != 0)
     {
         vec3 L = getlightdir(p, l);
         vec3 LD = normalize(l.Direction.xyz);
@@ -155,7 +156,15 @@ void main(void)
     
     vec4 outcolor = ambient * ambient_brightness;
 
-    for (int i = 0; i < MAX_LIGHTS; ++i)
+    outcolor = vec4(
+        outcolor.r * diffuse.r,
+        outcolor.g * diffuse.g,
+        outcolor.b * diffuse.b,
+        outcolor.a * diffuse.a
+    );
+    
+
+    for (int i = 0, maxl = max(light_count, MAX_LIGHTS); i < maxl; ++i)
     {
         Light _light = SceneLights.lights[i];
         vec3 light_color = getrawlightcolor(vs_worldpos, _light);
@@ -170,16 +179,12 @@ void main(void)
             pow(glossfac, gloss.b)
         );
         outcolor += vec4(
-            light_color.r * specular.r * gls.r  +  difffac * light_color.r * diffuse.r,
-            light_color.g * specular.g * gls.g  +  difffac * light_color.g * diffuse.g,
-            light_color.b * specular.b * gls.b  +  difffac * light_color.b * diffuse.b,
+            max(0, light_color.r * specular.r * gls.r  +  difffac * light_color.r * diffuse.r),
+            max(0, light_color.g * specular.g * gls.g  +  difffac * light_color.g * diffuse.g),
+            max(0, light_color.b * specular.b * gls.b  +  difffac * light_color.b * diffuse.b),
             0
         );
     }
     
-
     color = vec4(outcolor.xyz * (1 - glow.a) + outcolor.xyz * glow.a, outcolor.a + glow.a);
-
-
-    color = vec4(SceneLights.lights[0].IsActive);
 }

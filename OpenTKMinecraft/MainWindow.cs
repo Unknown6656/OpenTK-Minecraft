@@ -57,10 +57,10 @@ namespace OpenTKMinecraft
                 (ShaderType.FragmentShader, "shaders/scene_fshader.frag")
             ))
             {
-                Camera = new PlayerCamera()
+                Camera = new PlayerCamera(),
             };
             _scene.Lights.LightData[0] = Light.CreateEnvironmentLight(new Vector3(3, 2, 10), Color.Magenta);
-            _scene.Lights.LightData[1] = Light.CreatePointLight(new Vector3(0, 0, 2), Color.Red);
+            _scene.Lights.LightData[1] = Light.CreatePointLight(new Vector3(0, 0, 2), Color.Wheat);
 
             BuildScene();
             ResetCamera();
@@ -79,7 +79,6 @@ namespace OpenTKMinecraft
                         var block = _scene.World[1 - i, j + 1, 0];
 
                         block.Material = BlockMaterial.Stone;
-                        // block.SetScale(.5f, .5f, .5f);
                     }
 
             int side = 6;

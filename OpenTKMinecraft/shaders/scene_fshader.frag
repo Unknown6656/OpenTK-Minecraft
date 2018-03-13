@@ -37,7 +37,7 @@ struct Light
     float Exponent;
     float Falloff;
     uint Mode;
-    bool IsActive;
+    uint IsActive;
 };
 
 layout (location = 8) uniform float window_width;
@@ -51,7 +51,7 @@ layout (location = 21) uniform mat4 model_view;
 layout (location = 22) uniform mat4 mat_normal;
 
 layout (location = 30) uniform float ambient_brightness;
-layout (std140, binding = 1) uniform LightBlock {
+layout (std140, shared, binding = 1) uniform LightBlock {
     Light lights[MAX_LIGHTS];
 } SceneLights;
 
@@ -179,4 +179,7 @@ void main(void)
     
 
     color = vec4(outcolor.xyz * (1 - glow.a) + outcolor.xyz * glow.a, outcolor.a + glow.a);
+
+
+    color = vec4(SceneLights.lights[0].IsActive);
 }

@@ -13,7 +13,7 @@ out vec4 vs_color;
 
 void main(void)
 {
-    gl_Position = position;
+    gl_Position = vec4(position, 1);
 
     vs_color = color;
     vs_normal = normal;

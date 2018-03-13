@@ -75,7 +75,12 @@ namespace OpenTKMinecraft
             for (int i = 0; i < 4; ++i)
                 for (int j = 0; j < 4; ++j)
                     if ((i == 0) || (i == 3) || (j == 0) || (j == 3))
-                        _scene.World[1 - i, j + 1, 0].Material = BlockMaterial.Stone;
+                    {
+                        var block = _scene.World[1 - i, j + 1, 0];
+
+                        block.Material = BlockMaterial.Stone;
+                        // block.SetScale(.5f, .5f, .5f);
+                    }
 
             int side = 6;
 
@@ -83,9 +88,7 @@ namespace OpenTKMinecraft
                 for (int j = -side; j <= side; ++j)
                     _scene.World[i, (int)(Sin((i + j) / 3) * 1.5), j].Material = BlockMaterial.Grass;
 
-            _scene.World.PlaceCustomBlock(4, 1, 0, WavefrontFile.FromPath("resources/center-piece.obj"));
-
-            // _scene.World[0, 2, 0].SetRotation();
+            // _scene.World.PlaceCustomBlock(4, 1, 0, WavefrontFile.FromPath("resources/center-piece.obj"));
         }
 
         private void ResetCamera()

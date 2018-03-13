@@ -28,7 +28,8 @@ namespace OpenTKMinecraft.Components
         private protected Matrix4 _mnormal;
 
         public Renderable Model { get; private protected set; }
-        public Vector4 Rotation { get; private protected set; }
+        public Vector3 Rotation { get; private protected set; }
+        public Vector3 Scale { get; private protected set; }
         public Vector4 Direction { get; private protected set; }
         public Vector4 Position { get; private protected set; }
         public float Velocity { get; private protected set; }
@@ -37,13 +38,14 @@ namespace OpenTKMinecraft.Components
 
 
 
-        public GameObject(Renderable model, Vector4 pos, Vector4 dir, Vector4 rot, float vel)
+        public GameObject(Renderable model, Vector4 pos, Vector4 dir, Vector3 rot, Vector3 scale, float vel)
         {
             Model = model;
             Position = pos;
             Direction = dir;
             Rotation = rot;
             Velocity = vel;
+            Scale = scale;
 
             ID = _gameobjectcounter++;
         }
@@ -55,7 +57,8 @@ namespace OpenTKMinecraft.Components
             Model.Program.Use();
             Model.Bind();
 
-            _modelview = Matrix4.CreateRotationZ(Rotation.X)
+            _modelview = Matrix4.CreateScale(Scale.X, Scale.Y, Scale.Z)
+                       * Matrix4.CreateRotationZ(Rotation.X)
                        * Matrix4.CreateRotationY(Rotation.Y)
                        * Matrix4.CreateRotationX(Rotation.Z)
                        * Matrix4.CreateTranslation(Position.X, Position.Y, Position.Z);

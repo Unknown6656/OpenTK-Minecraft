@@ -116,30 +116,31 @@ namespace OpenTKMinecraft.Components
             program.Use();
 
             _index = GL.GetUniformBlockIndex(program.ID, "LightBlock");
+            _buffer = GL.GenBuffer();
 
             GL.GetActiveUniformBlock(program.ID, _index, ActiveUniformBlockParameter.UniformBlockDataSize, out int datsz);
 
             if (datsz != sizeof(Light) * MAX_LIGHTS)
                 throw new InvalidProgramException("Some internal error occured resulting in the shader not being capable of accepting the light data.");
 
-            GL.UniformBlockBinding(program.ID, _index, 1);
+            GL.GetError(); GL.GetError();
 
-            _buffer = GL.GenBuffer();
-
+            GL.UniformBlockBinding(program.ID, _index, _buffer);
             GL.BindBuffer(BufferTarget.UniformBuffer, _buffer);
-            // GL.BindBufferBase(BufferRangeTarget.UniformBuffer, _index, _buffer);
+            GL.BindBufferBase(BufferRangeTarget.UniformBuffer, _index, _buffer);
             GL.BufferData(BufferTarget.UniformBuffer, datsz, LightData, BufferUsageHint.DynamicDraw);
             GL.BindBufferRange(BufferRangeTarget.UniformBuffer, _index, _buffer, IntPtr.Zero, datsz);
-            // GL.BindBuffer(BufferTarget.UniformBuffer, 0);
+
+            var err = GL.GetError();
         }
 
         public override void Bind()
         {
             GL.BindBuffer(BufferTarget.UniformBuffer, _buffer);
-            // GL.BindBufferBase(BufferRangeTarget.UniformBuffer, _index, _buffer);
+            GL.BindBufferBase(BufferRangeTarget.UniformBuffer, _index, _buffer);
             // GL.BufferData(BufferTarget.UniformBuffer, sizeof(Light) * MAX_LIGHTS, LightData, BufferUsageHint.DynamicDraw);
             GL.BufferSubData(BufferTarget.UniformBuffer, IntPtr.Zero, sizeof(Light) * MAX_LIGHTS, LightData);
-            GL.BindBuffer(BufferTarget.UniformBuffer, 0);
+            // GL.BindBuffer(BufferTarget.UniformBuffer, 0);
         }
 
         protected override void Dispose(bool disposing)

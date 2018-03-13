@@ -112,8 +112,8 @@ namespace OpenTKMinecraft.Utilities
     public sealed class OBJModel
         : GameObject
     {
-        public OBJModel(ShaderProgram progr, WavefrontFile obj, Vector4 pos, Vector4 rot)
-            : base(new TexturedVertexSet(obj.ToCVertex(), PrimitiveType.Triangles, progr), pos, rot, rot, 0)
+        public OBJModel(ShaderProgram progr, WavefrontFile obj, Vector4 pos, Vector3 rot)
+            : base(new TexturedVertexSet(obj.ToCVertex(), PrimitiveType.Triangles, progr), pos, new Vector4(rot, 0), rot, new Vector3(1), 0)
         {
         }
     }

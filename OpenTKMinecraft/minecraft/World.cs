@@ -194,13 +194,15 @@ namespace OpenTKMinecraft.Minecraft
         }
 
         internal RenderableBlock(Renderable model, World w, long x, long y, long z, BlockMaterial matr)
-            : base(model, new Vector4(x, y, z, 1), Vector4.Zero, Vector4.Zero, 0)
+            : base(model, new Vector4(x, y, z, 1), Vector4.Zero, Vector3.Zero, new Vector3(1), 0)
         {
             Material = matr;
             World = w;
         }
 
-        public void SetRotation(float x, float y, float z) => Rotation = new Vector4(x, y, z, 0);
+        public void SetRotation(float x, float y, float z) => Rotation = new Vector3(x, y, z);
+
+        public void SetScale(float x, float y, float z) => Scale = new Vector3(x, y, z);
 
         public override void Update(double time, double delta)
         {
@@ -235,7 +237,7 @@ namespace OpenTKMinecraft.Minecraft
         }
 
         public CustomBlock(WavefrontFile model, World w, long x, long y, long z, BlockMaterial matr)
-            : base(new OBJModel(w.Scene.Program, model, new Vector4(x, y, z, 0), Vector4.Zero).Model, w, x, y, z, matr)
+            : base(new OBJModel(w.Scene.Program, model, new Vector4(x, y, z, 0), Vector3.Zero).Model, w, x, y, z, matr)
         {
         }
     }

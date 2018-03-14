@@ -64,9 +64,8 @@ namespace OpenTKMinecraft
             {
                 Camera = new PlayerCamera(),
             };
-            _scene.Lights.LightData[0] = Light.CreatePointLight(new Vector3(0, 0, 2), Color.Wheat, 10);
-            _scene.Lights.LightData[1] = Light.CreateEnvironmentLight(new Vector3(3, 2, 10), Color.Gold);
-            //_scene.Lights.LightData[0] = Light.CreateSpotLight(new Vector3(0, 5, 5), new Vector3(0, -1, 0), Color.Red, .5f);
+            _scene.Lights.Add(Light.CreateDirectionalLight(new Vector3(-1, -1, 0), Color.WhiteSmoke));
+            _scene.Lights.Add(Light.CreatePointLight(new Vector3(0, 0, 2), Color.Wheat, 10));
 
             BuildScene();
             ResetCamera();
@@ -134,7 +133,7 @@ namespace OpenTKMinecraft
             if (_paused)
                 return;
 
-            _scene.Lights.LightData[0].Position = Matrix3.CreateRotationY((float)Time) * new Vector3(0, 2, 4);
+            _scene.Lights[1].Position = Matrix3.CreateRotationY((float)Time) * new Vector3(0, 2, 4);
 
             _hud.Update(Time, e.Time);
             _scene.Update(Time, e.Time, (float)Width / Height);
@@ -167,7 +166,7 @@ namespace OpenTKMinecraft
             {
                 CursorVisible = (_paused = !_paused);
 
-                Thread.Sleep(100);
+                Thread.Sleep(300);
 
                 if (!_paused)
                 {

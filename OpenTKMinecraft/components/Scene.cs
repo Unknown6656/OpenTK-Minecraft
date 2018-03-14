@@ -57,8 +57,8 @@ namespace OpenTKMinecraft.Components
 
             Bind();
 
-            GL.LineWidth(1);
-            GL.PointSize(1);
+            GL.LineWidth(1.5f);
+            GL.PointSize(1.5f);
             // GL.PatchParameter(PatchParameterInt.PatchVertices, 4);
 
             GL.Uniform1(6, Window._paused ? 1 : 0);

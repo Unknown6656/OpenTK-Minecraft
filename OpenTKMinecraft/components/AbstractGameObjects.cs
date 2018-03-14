@@ -327,13 +327,14 @@ namespace OpenTKMinecraft.Components
 
             GL.CreateTextures(TextureTarget.Texture2D, 1, out int tex);
             GL.BindTexture(TextureTarget.Texture2D, tex);
-            GL.TextureStorage2D(tex, 1, SizedInternalFormat.Rgba32f, sz, sz);
-            GL.TextureSubImage2D(tex, 0, 0, 0, sz, sz, OpenTK.Graphics.OpenGL4.PixelFormat.Rgba, PixelType.Float, data);
-            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, sz, sz, 0, OpenTK.Graphics.OpenGL4.PixelFormat.Rgba, PixelType.Float, data);
             GL.TexParameterI(TextureTarget.ProxyTexture2D, TextureParameterName.TextureWrapS, new[] { (int)TextureWrapMode.ClampToEdge });
             GL.TexParameterI(TextureTarget.ProxyTexture2D, TextureParameterName.TextureWrapT, new[] { (int)TextureWrapMode.ClampToEdge });
             GL.TexParameterI(TextureTarget.ProxyTexture2D, TextureParameterName.TextureMagFilter, new[] { (int)TextureMagFilter.Nearest });
             GL.TexParameterI(TextureTarget.ProxyTexture2D, TextureParameterName.TextureMinFilter, new[] { (int)TextureMinFilter.LinearMipmapLinear });
+            GL.TextureStorage2D(tex, 1, SizedInternalFormat.Rgba32f, sz, sz);
+            GL.TextureSubImage2D(tex, 0, 0, 0, sz, sz, OpenTK.Graphics.OpenGL4.PixelFormat.Rgba, PixelType.Float, data);
+            GL.TexImage2D(TextureTarget.Texture2D, (int)Math.Log(_size, 2), PixelInternalFormat.Rgba, sz, sz, 0, OpenTK.Graphics.OpenGL4.PixelFormat.Rgba, PixelType.Float, data);
+            GL.GenerateMipmap(GenerateMipmapTarget.Texture2D);
 
             return tex;
         }

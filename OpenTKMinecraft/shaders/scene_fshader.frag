@@ -108,21 +108,27 @@ vec4 _texture(int type, vec2 uv, int mode)
 
 vec3 getlightdir(vec3 p, Light l)
 {
-    return normalize(l.Position.xyz - p);
+    if (l.Mode == LIGHT_DIRECTIONAL)
+        return normalize(-l.Direction.xyz);
+    else
+        return normalize(l.Position.xyz - p);
 }
 
 vec3 getrawlightcolor(vec3 p, Light l)
 {
     if (l.IsActive != 0)
     {
+        if (l.Mode == LIGHT_AMBIENT)
+            return l.Color.rgb;
+        
         vec3 L = getlightdir(p, l);
         vec3 LD = normalize(l.Direction.xyz);
         float IL = max(dot(L, -LD), 0); // TODO: Light intensity dependending on direction?
         
-        if (l.Mode == LIGHT_AMBIENT)
-            IL = 1;
-        else if (l.Mode == LIGHT_POINT)
+        if (l.Mode == LIGHT_POINT)
         {
+            IL = 1;
+
             if (l.Falloff > 0)
                 IL *= pow(abs(length(p - l.Position.xyz)), -2) / l.Falloff;
         }
@@ -158,24 +164,29 @@ void main(void)
     for (int i = 0, maxl = min(light_count, MAX_LIGHTS); i < maxl; ++i)
     {
         Light _light = SceneLights.lights[i];
-
         vec3 light_color = getrawlightcolor(vs_worldpos, _light);
-        vec3 L = vs_TBN * normalize(getlightdir(vs_worldpos, _light));
-        vec3 R = reflect(L, N);
-        float LN = max(0, dot(L, N));
-        float RV = max(0, dot(R, V));
 
-        vec3 gloss_factor = vec3(
-            pow(RV, gloss.r),
-            pow(RV, gloss.g),
-            pow(RV, gloss.b)
-        );
-        vec3 contribution = light_color * diffuse.xyz * LN;
+        if (_light.Mode == LIGHT_AMBIENT)
+            outcolor += vec4(ambient.rgb * light_color * diffuse.rgb, diffuse.a);
+        else
+        {
+            vec3 L = vs_TBN * getlightdir(vs_worldpos, _light);
+            vec3 R = reflect(L, N);
+            float LN = max(0, dot(L, N));
+            float RV = max(0, dot(R, V));
 
-        // TODO : glossiness
-        // contribution += light_color * specular * gloss_factor;
-                          
-        outcolor += vec4(contribution * diffuse.a, 0);
+            vec3 gloss_factor = vec3(
+                pow(RV, gloss.r),
+                pow(RV, gloss.g),
+                pow(RV, gloss.b)
+            );
+            vec3 contribution = light_color * diffuse.xyz * LN;
+
+            // TODO : glossiness
+            // contribution += light_color * specular * gloss_factor;
+
+            outcolor += vec4(contribution * diffuse.a, 0);
+        }
     }
     
     color = vec4(outcolor.xyz * (1 - glow.a) + outcolor.xyz * glow.a, outcolor.a + glow.a);

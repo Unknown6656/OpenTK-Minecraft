@@ -70,15 +70,25 @@ namespace OpenTKMinecraft.Components
 
         public override string ToString() => $"({(IsActive ? "" : "in")}active) P:{Position}  D:{Direction}  C:{Color}  I:{Intensity}  E:{Exponent}  F:{Falloff}  M:{Mode}";
 
-        public static Light CreateEnvironmentLight(Vector3 position, Color4 color, float intensity = 1) => new Light
+        public static Light CreateEnvironmentLight(Color4 color, float intensity = 1) => new Light
         {
             Falloff = 0,
             Exponent = 0,
             Color = color,
             IsActive = true,
-            Position = position,
             Intensity = intensity,
             Mode = LightMode.Ambient,
+        };
+
+        public static Light CreateDirectionalLight(Vector3 direction, Color4 color, float intensity = 1) => new Light
+        {
+            Falloff = 0,
+            Exponent = 0,
+            Color = color,
+            IsActive = true,
+            Direction = direction,
+            Intensity = intensity,
+            Mode = LightMode.Directional,
         };
 
         public static Light CreatePointLight(Vector3 position, Color4 color, float intensity = 1, float falloff = .02f) => new Light
@@ -118,8 +128,23 @@ namespace OpenTKMinecraft.Components
         : Renderable
     {
         public const int MAX_LIGHTS = 256;
-        public readonly Light[] LightData = new Light[MAX_LIGHTS];
+        private readonly Light[] LightData = new Light[MAX_LIGHTS];
         private int _index, _buffer, _bindingpoint;
+
+        private int FirstFreeIndex
+        {
+            get
+            {
+                int i = 0;
+
+                while ((i < MAX_LIGHTS) && LightData[i].IsActive)
+                    ++i;
+
+                return i;
+            }
+        }
+
+        public ref Light this[int i] => ref LightData[i];
 
 
         public Lights(ShaderProgram program)
@@ -144,12 +169,26 @@ namespace OpenTKMinecraft.Components
         public override void Render()
         {
             base.Render();
-            int i = 0;
 
-            while ((i < MAX_LIGHTS) && LightData[i].IsActive)
-                ++i;
+            GL.Uniform1(31, FirstFreeIndex);
+        }
 
-            GL.Uniform1(31, i);
+        public void Remove(int i)
+        {
+            if ((i < MAX_LIGHTS) && (i >= 0))
+                LightData[i].IsActive = false;
+        }
+
+        public int Add(Light l)
+        {
+            int i = FirstFreeIndex;
+
+            if (i >= MAX_LIGHTS)
+                return -1;
+
+            LightData[i] = l;
+
+            return i;
         }
 
         protected override void Dispose(bool disposing)

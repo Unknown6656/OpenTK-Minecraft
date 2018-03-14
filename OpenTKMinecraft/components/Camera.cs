@@ -1,5 +1,6 @@
 ﻿using System;
 
+using OpenTK.Graphics.OpenGL4;
 using OpenTK;
 
 namespace OpenTKMinecraft.Components
@@ -17,14 +18,25 @@ namespace OpenTKMinecraft.Components
         void MoveDown(float dist);
     }
 
+    public class CameraRenderData
+    {
+        public CameraStereoMode StereoMode { set; get; }
+        public Matrix4? Projection { set; get; }
+    }
+
     public abstract class Camera
     {
         public CameraView ViewType { set; get; } = CameraView.Perspective;
+        public virtual float FocalDistance { internal protected set; get; } = 10;
+        public virtual Vector3 Direction { protected set; get; }
         public virtual Vector3 Position { protected set; get; }
-        public virtual float FocalDistance { protected set; get; }
+        public Matrix4 Perspective { private set; get; }
         public Matrix4 Projection { private set; get; }
         public float FieldOfView { private set; get; }
-        public virtual Vector3 Direction { protected set; get; }
+        public virtual bool IsStereoscopic { set; get; }
+        public float EyeSeparation { set; get; } = 0.1f;
+
+        public Vector3 Up { get; } = Vector3.UnitY;
 
         public float ZoomFactor
         {
@@ -33,7 +45,7 @@ namespace OpenTKMinecraft.Components
         }
 
 
-        public Camera() => ResetZoom();
+        protected Camera() => ResetZoom();
 
         protected abstract void Update(double time, double delta);
 
@@ -41,10 +53,26 @@ namespace OpenTKMinecraft.Components
         {
             Update(time, delta);
 
-            Projection = Matrix4.LookAt(Position, Position + Direction, Vector3.UnitY);
+            Projection = Matrix4.LookAt(Position, Position + Direction, Up);
 
             if (ViewType == CameraView.Perspective)
-                Projection *= Matrix4.CreatePerspectiveFieldOfView((float)(FieldOfView * PI / 180), aspectratio, .01f, 10000f);
+                Perspective = Matrix4.CreatePerspectiveFieldOfView((float)(FieldOfView * PI / 180), aspectratio, .01f, 10000f);
+            else
+                Perspective = Matrix4.Identity;
+        }
+
+        internal void Render(GameObject obj, CameraRenderData data)
+        {
+            Matrix4 _mview = obj.ModelView;
+            Matrix4 _projection = (data?.Projection ?? Projection) * Perspective;
+            Matrix4 _mnormal = Matrix4.Transpose(Matrix4.Invert(_mview));
+
+            GL.UniformMatrix4(20, false, ref _projection);
+            GL.UniformMatrix4(21, false, ref _mview);
+            GL.UniformMatrix4(22, false, ref _mnormal);
+            GL.Uniform1(23, (int)(data?.StereoMode ?? CameraStereoMode.Normal));
+
+            obj.Model.Render();
         }
 
         public void ResetZoom() => ZoomFactor = 60;
@@ -137,8 +165,6 @@ namespace OpenTKMinecraft.Components
 
 
         public MovableCameraHint CameraHint { set; get; }
-
-        public Vector3 Up { get; } = Vector3.UnitY;
 
         public Vector3 View => -W;
 
@@ -281,7 +307,6 @@ namespace OpenTKMinecraft.Components
 
 
         public bool FixedFocus { set; get; }
-        public Vector3 Up { get; } = Vector3.UnitY;
         public Vector3 W => Vector3.Normalize(-Direction);
         public Vector3 U { private set; get; }
         public Vector3 V { private set; get; }
@@ -410,5 +435,13 @@ namespace OpenTKMinecraft.Components
     {
         Orthogonal,
         Perspective
+    }
+
+    public enum CameraStereoMode
+        : uint
+    {
+        Normal = 0,
+        LeftEye = 1,
+        RightEye = 2,
     }
 }

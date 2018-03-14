@@ -17,6 +17,7 @@ layout (location = 12) uniform float cam_focaldist;
 layout (location = 20) uniform mat4 projection;
 layout (location = 21) uniform mat4 model_view;
 layout (location = 22) uniform mat4 mat_normal;
+layout (location = 23) uniform int camera_eye;
 
 layout (location = 30) uniform float ambient_brightness;
 layout (location = 31) uniform int light_count;

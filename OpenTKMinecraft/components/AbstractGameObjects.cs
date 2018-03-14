@@ -15,7 +15,7 @@ namespace OpenTKMinecraft.Components
 
     public interface IRenderable
     {
-        void Render(Camera camera);
+        void Render(Camera camera, CameraRenderData data);
     }
 
     public abstract class GameObject
@@ -23,9 +23,7 @@ namespace OpenTKMinecraft.Components
         , IUpdatable
     {
         private static ulong _gameobjectcounter;
-        private protected Matrix4 _projection;
         private protected Matrix4 _modelview;
-        private protected Matrix4 _mnormal;
 
         public Renderable Model { get; private protected set; }
         public Vector3 Rotation { get; private protected set; }
@@ -64,21 +62,14 @@ namespace OpenTKMinecraft.Components
                        * Matrix4.CreateRotationX(Rotation.Z)
                        * Matrix4.CreateTranslation(Position.X, Position.Y, Position.Z);
 
-        public virtual void Render(Camera camera)
+        public virtual void Render(Camera camera, CameraRenderData data)
         {
             Model.Program.Use();
             Model.Bind();
 
             UpdateModelView();
 
-            _projection = camera.Projection;
-            _mnormal = Matrix4.Transpose(Matrix4.Invert(_modelview));
-
-            GL.UniformMatrix4(22, false, ref _mnormal);
-            GL.UniformMatrix4(21, false, ref _modelview);
-            GL.UniformMatrix4(20, false, ref _projection);
-
-            Model.Render();
+            camera.Render(this, data);
         }
 
         public void Dispose() => Model?.Dispose();

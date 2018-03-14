@@ -58,6 +58,7 @@
   <ItemGroup>
     <Compile Include="components\Camera.cs" />
     <Compile Include="components\HUD.cs" />
+    <Compile Include="Native.cs" />
     <Compile Include="components\Scene.cs" />
     <Compile Include="components\Light.cs" />
     <Compile Include="components\AbstractGameObjects.cs" />

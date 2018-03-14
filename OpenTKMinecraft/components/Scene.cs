@@ -11,6 +11,7 @@ using OpenTK;
 
 using OpenTKMinecraft.Utilities;
 using OpenTKMinecraft.Minecraft;
+using OpenTKMinecraft.Native;
 
 namespace OpenTKMinecraft.Components
 {
@@ -71,7 +72,31 @@ namespace OpenTKMinecraft.Components
             GL.Uniform1(30, Math.Max(0, Math.Min(Brightness, 1)));
 
             Lights.Render();
-            World.Render(Camera);
+
+            if (Camera.IsStereoscopic)
+            {
+                Vector3 right = Vector3.Normalize(Vector3.Cross(camtarg - campos, Camera.Up));
+
+                // left eye
+                World.Render(Camera, new CameraRenderData
+                {
+                    Projection = Matrix4.LookAt(campos - Camera.EyeSeparation / 2 * right, camtarg, Camera.Up),
+                    StereoMode = CameraStereoMode.LeftEye,
+                });
+                OpenGL32.glAccum(AccumulationOperation.Load, 1);
+
+                // right eye
+                World.Render(Camera, new CameraRenderData
+                {
+                    Projection = Matrix4.LookAt(campos + Camera.EyeSeparation / 2 * right, camtarg, Camera.Up),
+                    StereoMode = CameraStereoMode.RightEye,
+                });
+                OpenGL32.glAccum(AccumulationOperation.Accumulate, 1);
+
+                OpenGL32.glAccum(AccumulationOperation.Return, 1);
+            }
+            else
+                World.Render(Camera, null);
         }
 
         protected override void Dispose(bool disposing)

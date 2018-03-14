@@ -68,10 +68,10 @@ namespace OpenTKMinecraft.Minecraft
             return (cx, cy, cz, _x, _y, _z);
         }
 
-        public void Render(Camera camera)
+        public void Render(Camera camera, CameraRenderData data)
         {
             foreach (Chunk c in _chunks)
-                c.Render(camera);
+                c.Render(camera, data);
         }
 
         public void Update(double time, double delta)
@@ -165,13 +165,13 @@ namespace OpenTKMinecraft.Minecraft
                             b.Update(time, delta);
         }
 
-        public void Render(Camera camera)
+        public void Render(Camera camera, CameraRenderData data)
         {
             for (int x = 0; x < CHUNK_SIZE; ++x)
                 for (int z = 0; z < CHUNK_SIZE; ++z)
                     for (int y = 0; y < CHUNK_SIZE; ++y)
                         if (Blocks[x, y, z] is RenderableBlock b)
-                            b.Render(camera);
+                            b.Render(camera, data);
         }
 
         public CustomBlock PlaceCustomBlock(long x, long y, long z, WavefrontFile m)

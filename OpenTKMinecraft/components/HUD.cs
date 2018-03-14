@@ -19,7 +19,7 @@ namespace OpenTKMinecraft.Components
         public ShaderProgram Program { get; }
         public MainWindow Window { get; }
 
-        private VertexBuffer<HUDVertex> _crosshair;
+        private HUDVertexBuffer _crosshair;
 
 
         public HUD(MainWindow win, ShaderProgram prog)
@@ -29,19 +29,12 @@ namespace OpenTKMinecraft.Components
 
             Program.Use();
 
-            _crosshair = new VertexBuffer<HUDVertex>(new[]
+            _crosshair = new HUDVertexBuffer(new[]
             {
-                new HUDVertex(-.1f, 0, -1, Color4.Wheat),
-                new HUDVertex(.1f, 0, -1, Color4.Wheat),
-                new HUDVertex(0, -.1f, -1, Color4.Wheat),
-                new HUDVertex(0, .1f, -1, Color4.Wheat),
-            }, 0, PrimitiveType.Lines, new[]
-            {
-                (0, VertexAttribType.Float, 3),
-                (12, VertexAttribType.Float, 3),
-                (24, VertexAttribType.Float, 2),
-                (32, VertexAttribType.Float, 4),
-            });
+                new HUDVertex(-0.25f, 0.25f, -0.5f, Color4.Wheat),
+                new HUDVertex(0.0f, -0.25f, -0.5f, Color4.Wheat),
+                new HUDVertex(0.25f, 0.25f, -0.5f, Color4.Wheat),
+            }, PrimitiveType.Points);
         }
 
         public void Update(double time, double delta)
@@ -53,13 +46,21 @@ namespace OpenTKMinecraft.Components
         {
             Program.Use();
 
+            PlayerCamera cam = Window.Camera;
+            Vector3 campos = cam.Position;
+            Vector3 camtarg = cam.Position + (cam.FocalDistance * cam.Direction);
+            Matrix4 projection = Matrix4.LookAt(campos, camtarg, cam.Up);
+
             GL.Viewport(0, 0, Window.Width, Window.Height);
-            GL.LineWidth(5);
-            GL.PointSize(5);
+            GL.LineWidth(10);
+            GL.PointSize(10);
             GL.Uniform1(6, Window._paused ? 1 : 0);
             GL.VertexAttrib1(7, time);
             GL.Uniform1(8, width);
             GL.Uniform1(9, height);
+            GL.Uniform3(10, ref campos);
+            GL.Uniform3(11, ref camtarg);
+            GL.UniformMatrix4(20, false, ref projection);
 
             _crosshair.Render();
         }
@@ -71,16 +72,15 @@ namespace OpenTKMinecraft.Components
         }
     }
 
-    public sealed class VertexBuffer<T>
+    public sealed unsafe class HUDVertexBuffer
         : IDisposable
-        where T : struct
     {
         private readonly int _array, _buffer, _count;
         private readonly PrimitiveType _type;
-        private readonly T[] _vert;
+        private readonly HUDVertex[] _vert;
 
 
-        public VertexBuffer(T[] vertices, int locoffset, PrimitiveType type, params (int offset, VertexAttribType type, int size)[] layout)
+        public HUDVertexBuffer(HUDVertex[] vertices, PrimitiveType type)
         {
             _type = type;
             _vert = vertices;
@@ -88,18 +88,22 @@ namespace OpenTKMinecraft.Components
             _buffer = GL.GenBuffer();
             _array = GL.GenVertexArray();
 
-            int tsz = Marshal.SizeOf<T>();
+            GL.NamedBufferStorage(_buffer, sizeof(HUDVertex) * vertices.Length, vertices, BufferStorageFlags.MapWriteBit);
 
-            GL.NamedBufferStorage(_buffer, tsz * vertices.Length, vertices, BufferStorageFlags.MapWriteBit);
+            GL.VertexArrayAttribBinding(_array, 0, 0);
+            GL.EnableVertexArrayAttrib(_array, 0);
+            GL.VertexArrayAttribFormat(_array, 0, 4, VertexAttribType.Float, false, 0);
+            GL.VertexArrayAttribBinding(_array, 1, 0);
+            GL.EnableVertexArrayAttrib(_array, 1);
+            GL.VertexArrayAttribFormat(_array, 1, 4, VertexAttribType.Float, false, 16);
+            GL.VertexArrayAttribBinding(_array, 2, 0);
+            GL.EnableVertexArrayAttrib(_array, 2);
+            GL.VertexArrayAttribFormat(_array, 2, 2, VertexAttribType.Float, false, 32);
+            GL.VertexArrayAttribBinding(_array, 3, 0);
+            GL.EnableVertexArrayAttrib(_array, 3);
+            GL.VertexArrayAttribFormat(_array, 3, 4, VertexAttribType.Float, false, 48);
 
-            for (int i = 0; i < layout.Length; ++i)
-            {
-                GL.VertexArrayAttribBinding(_array, locoffset + i, 0);
-                GL.EnableVertexArrayAttrib(_array, locoffset + i);
-                GL.VertexArrayAttribFormat(_array, locoffset + i, layout[i].size, layout[i].type, false, layout[i].offset);
-            }
-
-            GL.VertexArrayVertexBuffer(_array, 0, _buffer, IntPtr.Zero, tsz);
+            GL.VertexArrayVertexBuffer(_array, 0, _buffer, IntPtr.Zero, sizeof(HUDVertex));
         }
 
         public void Bind()
@@ -125,9 +129,11 @@ namespace OpenTKMinecraft.Components
     [StructLayout(LayoutKind.Sequential)]
     public struct HUDVertex
     {
-        public Vector3 Position;
-        public Vector3 Normal;
+        public Vector4 Position;
+        public Vector4 Normal;
         public Vector2 TexCoord;
+        private float __padding__1;
+        private float __padding__2;
         public Color4 Color;
 
 
@@ -140,7 +146,7 @@ namespace OpenTKMinecraft.Components
             : this()
         {
             Color = c;
-            Position = new Vector3(x, y, z);
+            Position = new Vector4(x, y, z, 1);
         }
     }
 }

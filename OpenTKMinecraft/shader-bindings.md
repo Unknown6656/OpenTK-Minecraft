@@ -22,6 +22,7 @@ _This is an internal documentation document_
 | location `20`| `mat4` | Projection matrix |
 | location `21`| `mat4` | Model-View vertex matrix |
 | location `22`| `mat4` | Model-View normal matrix |
+| location `23`| `int` | Stereoscopic hint |
 | | | |
 | location `30`| `float` | Ambient brightness [0..1] |
 | location `31`| `int` | Light count |

@@ -49,7 +49,6 @@ namespace OpenTKMinecraft
         protected override void OnLoad(EventArgs e)
         {
             Closed += (s, a) => Exit();
-            
 
             _hud = new HUD(this, new ShaderProgram(
                 "HUD Shader",
@@ -62,7 +61,10 @@ namespace OpenTKMinecraft
                 (ShaderType.FragmentShader, "shaders/scene_fshader.frag")
             ))
             {
-                Camera = new PlayerCamera(),
+                Camera = new PlayerCamera
+                {
+                    IsStereoscopic = false,
+                },
             };
             _scene.Lights.Add(Light.CreateDirectionalLight(new Vector3(-1, -1, 0), Color.WhiteSmoke));
             _scene.Lights.Add(Light.CreatePointLight(new Vector3(0, 0, 2), Color.Wheat, 10));
@@ -107,9 +109,12 @@ namespace OpenTKMinecraft
 
         private void ResetCamera()
         {
-            Camera.MoveTo(new Vector3(0, 2, 0));
+            Camera.MoveTo(new Vector3(0, 6, -8));
             Camera.ResetZoom();
-            Camera.ResetAngles();
+            Camera.HorizontalAngle = (float)(PI / 2);
+            Camera.VerticalAngle = -.25f;
+            Camera.EyeSeparation = .1f;
+            Camera.FocalDistance = 10f;
         }
 
         public override void Exit()
@@ -128,10 +133,10 @@ namespace OpenTKMinecraft
         {
             HandleInput();
 
-            Time += e.Time;
-
             if (_paused)
                 return;
+
+            Time += e.Time;
 
             _scene.Lights[1].Position = Matrix3.CreateRotationY((float)Time) * new Vector3(0, 2, 4);
 
@@ -152,6 +157,8 @@ namespace OpenTKMinecraft
             _hud.Render(Time, Width, Height);
 
             SwapBuffers();
+
+            Title = $"{1 / e.Time:F2} FPS";
         }
 
         internal void HandleInput()
@@ -166,7 +173,7 @@ namespace OpenTKMinecraft
             {
                 CursorVisible = (_paused = !_paused);
 
-                Thread.Sleep(300);
+                Thread.Sleep(100);
 
                 if (!_paused)
                 {
@@ -210,6 +217,26 @@ namespace OpenTKMinecraft
                 ++Camera.ZoomFactor;
             if (kstate.IsKeyDown(Key.R))
                 ResetCamera();
+            if (kstate.IsKeyDown(Key.Number4))
+            {
+                Camera.IsStereoscopic ^= true;
+
+                Thread.Sleep(100);
+            }
+
+            if (Camera.IsStereoscopic)
+            {
+                if (kstate.IsKeyDown(Key.PageUp))
+                    Camera.FocalDistance *= 1.1f;
+                if (kstate.IsKeyDown(Key.PageDown))
+                    Camera.FocalDistance /= 1.1f;
+                if (kstate.IsKeyDown(Key.Home))
+                    Camera.EyeSeparation += .005f;
+                if (kstate.IsKeyDown(Key.End))
+                    Camera.EyeSeparation -= .005f;
+            }
+
+            // CameraStereoMode
 
             Camera.RotateRight(δx * .2f * MouseSensitivityFactor);
             Camera.RotateUp(δy * .2f * MouseSensitivityFactor);

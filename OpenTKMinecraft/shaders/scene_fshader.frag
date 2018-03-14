@@ -14,6 +14,11 @@
 #define TEX_DETL 0xa
 #define TEX_FLOW 0xb
 
+// compare to OpenTKMinecraft::Components::CameraStereoMode
+#define CAM_NORMAL 0
+#define CAM_LEFT 1
+#define CAM_RIGHT 2
+
 #define MODE_CLAMP 1
 #define MODE_REPEAT 2
 #define MODE_MIRROR 3
@@ -50,6 +55,7 @@ layout (location = 12) uniform float cam_focaldist;
 layout (location = 20) uniform mat4 projection;
 layout (location = 21) uniform mat4 model_view;
 layout (location = 22) uniform mat4 mat_normal;
+layout (location = 23) uniform int camera_eye;
 
 layout (location = 30) uniform float ambient_brightness;
 layout (location = 31) uniform int light_count;
@@ -190,6 +196,14 @@ void main(void)
     }
     
     color = vec4(outcolor.xyz * (1 - glow.a) + outcolor.xyz * glow.a, outcolor.a + glow.a);
+
+    if (camera_eye == CAM_LEFT)
+        color.r = 0;
+    else if (camera_eye == CAM_RIGHT)
+    {
+        color.g = 0;
+        color.b = 0;
+    }
 
     if (paused)
     {

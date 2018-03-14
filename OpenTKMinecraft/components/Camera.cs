@@ -341,9 +341,9 @@ namespace OpenTKMinecraft.Components
 
         private void UpdateDirections()
         {
-            Matrix3 rotY = Matrix3.CreateRotationY((float)(_hθ * PI));
+            Matrix3 rotY = Matrix3.CreateRotationY(_hθ);
 
-            Direction = rotY * Matrix3.CreateRotationZ((float)((_vθ - .5f) * PI)) * Vector3.UnitX;
+            Direction = rotY * Matrix3.CreateRotationZ((float)(-_vθ * PI / 2)) * Vector3.UnitX;
             U = Vector3.Normalize(Vector3.Cross(Up, W)); // rotY * Vector3.UnitZ
             V = Vector3.Normalize(Vector3.Cross(W, U));
             H = rotY * Vector3.UnitX;

@@ -28,6 +28,7 @@ namespace OpenTKMinecraft
         : GameWindow
     {
         public PlayerCamera Camera => _scene.Camera as PlayerCamera;
+        public float MouseSensitivityFactor { set; get; } = 1;
         public double Time { get; private set; }
         public string[] Arguments { get; }
 
@@ -41,12 +42,14 @@ namespace OpenTKMinecraft
             : base(1920, 1080, new GraphicsMode(new ColorFormat(8, 8, 8, 8), 16, 16, 4), nameof(MainWindow), GameWindowFlags.Default, DisplayDevice.Default, Program.GL_VERSION_MAJ, Program.GL_VERSION_MIN, GraphicsContextFlags.ForwardCompatible)
         {
             Arguments = args;
+            MouseSensitivityFactor = 2;
             WindowBorder = WindowBorder.Resizable;
         }
 
         protected override void OnLoad(EventArgs e)
         {
             Closed += (s, a) => Exit();
+            
 
             _hud = new HUD(this, new ShaderProgram(
                 "HUD Shader",
@@ -108,7 +111,6 @@ namespace OpenTKMinecraft
             Camera.MoveTo(new Vector3(0, 2, 0));
             Camera.ResetZoom();
             Camera.ResetAngles();
-            Camera.VerticalAngle = -.5f;
         }
 
         public override void Exit()
@@ -192,9 +194,9 @@ namespace OpenTKMinecraft
             if (kstate.IsKeyDown(Key.Number3))
                 _scene.Program.PolygonMode = PolygonMode.Fill;
             if (kstate.IsKeyDown(Key.W))
-                Camera.MoveBackwards(speed);
-            if (kstate.IsKeyDown(Key.S))
                 Camera.MoveForwards(speed);
+            if (kstate.IsKeyDown(Key.S))
+                Camera.MoveBackwards(speed);
             if (kstate.IsKeyDown(Key.A))
                 Camera.MoveLeft(speed);
             if (kstate.IsKeyDown(Key.D))
@@ -210,8 +212,8 @@ namespace OpenTKMinecraft
             if (kstate.IsKeyDown(Key.R))
                 ResetCamera();
 
-            Camera.RotateRight(δx * .075f);
-            Camera.RotateUp(δy * .075f);
+            Camera.RotateRight(δx * .2f * MouseSensitivityFactor);
+            Camera.RotateUp(δy * .2f * MouseSensitivityFactor);
 
             _mousex = mstate.X;
             _mousey = mstate.Y;

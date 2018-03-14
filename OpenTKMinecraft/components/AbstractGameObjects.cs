@@ -1,10 +1,13 @@
-﻿using System.Collections.Generic;
+﻿using System.Runtime.ExceptionServices;
+using System.Collections.Generic;
 using System.Drawing.Imaging;
 using System.Drawing;
 using System;
 
 using OpenTK.Graphics.OpenGL4;
 using OpenTK;
+
+using OpenTKMinecraft.Minecraft;
 
 namespace OpenTKMinecraft.Components
 {
@@ -133,12 +136,16 @@ namespace OpenTKMinecraft.Components
     public class TexturedVertexSet
         : Renderable
     {
-        internal readonly TextureSet _tex;
-
         public PrimitiveType PrimitiveType { set; get; }
+        internal TextureSet TextureSet { get; }
 
 
         unsafe public TexturedVertexSet(Vertex[] vertices, PrimitiveType type, ShaderProgram program, params (string Path, TextureType Type)[] textures)
+            : this(vertices, type, program, null, textures)
+        {
+        }
+
+        unsafe public TexturedVertexSet(Vertex[] vertices, PrimitiveType type, ShaderProgram program, BlockMaterial? mat, params (string Path, TextureType Type)[] textures)
             : base(program, vertices.Length)
         {
             Vector3[] tangents = new Vector3[vertices.Length];
@@ -196,14 +203,18 @@ namespace OpenTKMinecraft.Components
             GL.VertexArrayVertexBuffer(VertexArray, 0, Buffer, IntPtr.Zero, sizeof(Vertex));
 
             PrimitiveType = type;
-            _tex = new TextureSet(program, textures);
+
+            if (mat is BlockMaterial m && TextureSet.KnownTextures.ContainsKey(m))
+                TextureSet = TextureSet.KnownTextures[m];
+            else
+                TextureSet = new TextureSet(program, mat, textures);
         }
 
         public override void Bind()
         {
             base.Bind();
 
-            _tex.Bind();
+            TextureSet.Bind();
         }
 
         public override void Render()
@@ -214,7 +225,7 @@ namespace OpenTKMinecraft.Components
 
         protected override void Dispose(bool disposing)
         {
-            _tex.Dispose();
+            TextureSet.Dispose();
 
             base.Dispose(disposing);
         }
@@ -225,22 +236,39 @@ namespace OpenTKMinecraft.Components
     {
         private const int SZCNT = 4;
 
+        internal static readonly Dictionary<BlockMaterial, TextureSet> KnownTextures = new Dictionary<BlockMaterial, TextureSet>();
         private readonly Bitmap[] _imgs = new Bitmap[SZCNT * SZCNT];
         private int _size = int.MaxValue;
 
+        public BlockMaterial AssociatedMaterial { get; private set; }
         public int TextureID { get; private set; }
 
 
-        internal TextureSet(ShaderProgram program, params (string Path, TextureType Type)[] textures)
+        ~TextureSet() => Dispose();
+
+        internal TextureSet(ShaderProgram program, BlockMaterial? assoc, params (string Path, TextureType Type)[] textures)
             : base(program, 0)
         {
             TextureID = -1;
 
-            UpdateTexture(textures);
+            UpdateTexture(assoc, textures);
         }
 
-        internal void UpdateTexture(params (string Path, TextureType Type)[] textures)
+        internal void UpdateTexture(BlockMaterial? assoc, params (string Path, TextureType Type)[] textures)
         {
+            if (assoc is BlockMaterial m)
+            {
+                if (m == BlockMaterial.Air)
+                    return;
+
+                AssociatedMaterial = m;
+
+                if (KnownTextures.ContainsKey(m))
+                    KnownTextures[m]?.Dispose();
+
+                KnownTextures[m] = this;
+            }
+
             if (TextureID != -1)
                 GL.DeleteTexture(TextureID);
 
@@ -275,10 +303,17 @@ namespace OpenTKMinecraft.Components
             GL.ActiveTexture(TextureUnit.Texture0);
         }
 
+        [HandleProcessCorruptedStateExceptions]
         protected override void Dispose(bool disposing)
         {
             if (disposing)
-                GL.DeleteTexture(TextureID);
+                try
+                {
+                    GL.DeleteTexture(TextureID);
+                }
+                catch
+                {
+                }
 
             base.Dispose(disposing);
         }
@@ -313,6 +348,9 @@ namespace OpenTKMinecraft.Components
                 }
 
             bmp.UnlockBits(dat);
+#if DEBUG
+            bmp.Save($"{OpenTKMinecraft.Program.TEMP_DIR}/texture-{AssociatedMaterial}.png");
+#endif
             bmp.Dispose();
             bmp = null;
 

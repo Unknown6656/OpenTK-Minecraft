@@ -66,8 +66,8 @@ namespace OpenTKMinecraft
                     IsStereoscopic = false,
                 },
             };
-            _scene.Lights.Add(Light.CreateDirectionalLight(new Vector3(-1, -1, 0), Color.WhiteSmoke));
-            _scene.Lights.Add(Light.CreatePointLight(new Vector3(0, 0, 2), Color.Wheat, 10));
+            //_scene.Lights.Add(Light.CreateDirectionalLight(new Vector3(-1, -1, 0), Color.WhiteSmoke));
+            //_scene.Lights.Add(Light.CreatePointLight(new Vector3(0, 0, 2), Color.Wheat, 10));
 
             BuildScene();
             ResetCamera();
@@ -82,11 +82,7 @@ namespace OpenTKMinecraft
             for (int i = 0; i < 4; ++i)
                 for (int j = 0; j < 4; ++j)
                     if ((i == 0) || (i == 3) || (j == 0) || (j == 3))
-                    {
-                        var block = _scene.World[1 - i, j + 1, 0];
-
-                        block.Material = BlockMaterial.Stone;
-                    }
+                        _scene.World[1 - i, j + 1, 0].Material = ((i ^ j) & 1) != 0 ? BlockMaterial.Stone : BlockMaterial.Diamond;
 
             int side = 9;
 
@@ -94,7 +90,7 @@ namespace OpenTKMinecraft
                 for (int j = -side; j <= side; ++j)
                 {
                     int y = (int)(Sin((i + Sin(i) / 3 - j) / 3) * 1.5);
-                    
+
                     if ((i * i + j * j) < 15)
                     {
                         _scene.World[i, y, j].Material = BlockMaterial.Sand;
@@ -103,6 +99,8 @@ namespace OpenTKMinecraft
                     else
                         _scene.World[i, y, j].Material = BlockMaterial.Grass;
                 }
+
+            _scene.World[6, 1, 6].Material = BlockMaterial.Glowstone;
 
             // _scene.World.PlaceCustomBlock(4, 1, 0, WavefrontFile.FromPath("resources/center-piece.obj"));
         }
@@ -138,7 +136,7 @@ namespace OpenTKMinecraft
 
             Time += e.Time;
 
-            _scene.Lights[1].Position = Matrix3.CreateRotationY((float)Time) * new Vector3(0, 2, 4);
+            //_scene.Lights[1].Position = Matrix3.CreateRotationY((float)Time) * new Vector3(0, 2, 4);
 
             _hud.Update(Time, e.Time);
             _scene.Update(Time, e.Time, (float)Width / Height);

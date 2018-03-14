@@ -1,12 +1,114 @@
 ﻿using System.Runtime.InteropServices;
+using System.Linq;
 using System;
 
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Graphics;
 using OpenTK;
 
+using OpenTKMinecraft.Minecraft;
+
 namespace OpenTKMinecraft.Components
 {
+    public unsafe sealed class Lights
+        : Renderable
+    {
+        public const int MAX_LIGHTS = 256;
+        internal RenderableBlock[] AssocBlocks = new RenderableBlock[MAX_LIGHTS];
+        private readonly Light[] LightData = new Light[MAX_LIGHTS];
+        private int _index, _buffer, _bindingpoint;
+
+        private int FirstFreeIndex
+        {
+            get
+            {
+                int i = 0;
+
+                while ((i < MAX_LIGHTS) && LightData[i].IsActive)
+                    ++i;
+
+                return i;
+            }
+        }
+
+        public ref Light this[int i] => ref LightData[i];
+
+
+        public Lights(ShaderProgram program)
+            : base(program, 0)
+        {
+            program.Use();
+
+            _buffer = GL.GenBuffer();
+            _index = GL.GetUniformBlockIndex(program.ID, "LightBlock");
+            _bindingpoint = 1;
+        }
+
+        public override void Bind()
+        {
+            GL.BindBuffer(BufferTarget.UniformBuffer, _buffer);
+            GL.BufferData(BufferTarget.UniformBuffer, sizeof(Light) * MAX_LIGHTS, LightData, BufferUsageHint.DynamicDraw);
+            GL.BindBuffer(BufferTarget.UniformBuffer, 0);
+            GL.BindBufferBase(BufferRangeTarget.UniformBuffer, _bindingpoint, _buffer);
+            GL.UniformBlockBinding(Program.ID, _index, _bindingpoint);
+        }
+
+        public override void Render()
+        {
+            base.Render();
+
+            GL.Uniform1(31, FirstFreeIndex);
+        }
+
+        public void Remove(int i)
+        {
+            if ((i < MAX_LIGHTS) && (i >= 0))
+                LightData[i].IsActive = false;
+        }
+
+        public int Add(Light? light, RenderableBlock assoc_block = null)
+        {
+            if (light is Light l)
+            {
+                int i = FirstFreeIndex;
+
+                if (i >= MAX_LIGHTS)
+                    if (assoc_block is null)
+                        return -1;
+                    else
+                    {
+                        Vector3 campos = assoc_block.World.Scene.Camera.Position;
+                        float refdist = (assoc_block.Center - campos).Length;
+                        var available = from n in Enumerable.Range(0, MAX_LIGHTS)
+                                        let block = AssocBlocks[n]
+                                        where block != null
+                                        let dist = (campos - block.Center).Length
+                                        where dist > refdist
+                                        orderby dist descending
+                                        select n;
+
+                        if (available.Any())
+                            i = available.First();
+                        else
+                            return -1;
+                    }
+
+                LightData[i] = l;
+
+                return i;
+            }
+            else
+                return -1;
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            GL.DeleteBuffer(_buffer);
+
+            base.Dispose(disposing);
+        }
+    }
+
     [StructLayout(LayoutKind.Sequential)]
     public struct Light
     {
@@ -18,7 +120,7 @@ namespace OpenTKMinecraft.Components
         private LightMode _mode;
         private uint _is_act;
 
-
+        
         public Vector3 Position
         {
             set => _pos = new Vector4(value, 1);
@@ -122,80 +224,5 @@ namespace OpenTKMinecraft.Components
         PointLight = 1,
         SpotLight = 2,
         Directional = 3
-    }
-
-    public unsafe sealed class Lights
-        : Renderable
-    {
-        public const int MAX_LIGHTS = 256;
-        private readonly Light[] LightData = new Light[MAX_LIGHTS];
-        private int _index, _buffer, _bindingpoint;
-
-        private int FirstFreeIndex
-        {
-            get
-            {
-                int i = 0;
-
-                while ((i < MAX_LIGHTS) && LightData[i].IsActive)
-                    ++i;
-
-                return i;
-            }
-        }
-
-        public ref Light this[int i] => ref LightData[i];
-
-
-        public Lights(ShaderProgram program)
-            : base(program, 0)
-        {
-            program.Use();
-
-            _buffer = GL.GenBuffer();
-            _index = GL.GetUniformBlockIndex(program.ID, "LightBlock");
-            _bindingpoint = 1;
-        }
-
-        public override void Bind()
-        {
-            GL.BindBuffer(BufferTarget.UniformBuffer, _buffer);
-            GL.BufferData(BufferTarget.UniformBuffer, sizeof(Light) * MAX_LIGHTS, LightData, BufferUsageHint.DynamicDraw);
-            GL.BindBuffer(BufferTarget.UniformBuffer, 0);
-            GL.BindBufferBase(BufferRangeTarget.UniformBuffer, _bindingpoint, _buffer);
-            GL.UniformBlockBinding(Program.ID, _index, _bindingpoint);
-        }
-
-        public override void Render()
-        {
-            base.Render();
-
-            GL.Uniform1(31, FirstFreeIndex);
-        }
-
-        public void Remove(int i)
-        {
-            if ((i < MAX_LIGHTS) && (i >= 0))
-                LightData[i].IsActive = false;
-        }
-
-        public int Add(Light l)
-        {
-            int i = FirstFreeIndex;
-
-            if (i >= MAX_LIGHTS)
-                return -1;
-
-            LightData[i] = l;
-
-            return i;
-        }
-
-        protected override void Dispose(bool disposing)
-        {
-            GL.DeleteBuffer(_buffer);
-
-            base.Dispose(disposing);
-        }
     }
 }

@@ -204,6 +204,7 @@ namespace OpenTKMinecraft.Minecraft
         , IRenderable
     {
         private BlockMaterial _mat;
+        private int _lightindex = -1;
         private float _falling;
 
         public (Vector3 Min, Vector3 Max)? AABB { get; private protected set; }
@@ -218,18 +219,25 @@ namespace OpenTKMinecraft.Minecraft
             get => _mat;
             set
             {
+                if (BlockInfo.Blocks[_mat].IsActivelyGlowing)
+                    World.Scene.Lights.Remove(_lightindex);
+
                 BlockInfo nfo = BlockInfo.Blocks[_mat = value];
 
-                Texture.UpdateTexture(nfo.Textures);
+                Texture.UpdateTexture(value, nfo.Textures);
 
                 if (!IsSolid)
                     AABB = null;
+
+                _lightindex = nfo.IsActivelyGlowing ? World.Scene.Lights.Add(nfo.CreateAssociatedLight(this), this) : -1;
             }
         }
 
+        public Vector3 Center => AABB is null ? new Vector3(X, Y, Z) : (AABB.Value.Max + AABB.Value.Min) / 2;
+
         public BlockInfo MaterialInfo => BlockInfo.Blocks[Material];
 
-        internal TextureSet Texture => (Model as TexturedVertexSet)?._tex;
+        internal TextureSet Texture => (Model as TexturedVertexSet)?.TextureSet;
 
         public bool HasBlockBelow => World[X, Y - 1, Z]?.IsSolid ?? false;
 
@@ -329,7 +337,7 @@ namespace OpenTKMinecraft.Minecraft
         }
 
         public MinecraftBlock(World w, Chunk c, long x, long y, long z, BlockMaterial matr)
-            : base(new TexturedVertexSet(_vertices, PrimitiveType.Quads, w.Scene.Program), w, c, x, y, z, matr)
+            : base(new TexturedVertexSet(_vertices, PrimitiveType.Quads, w.Scene.Program, matr), w, c, x, y, z, matr)
         {
         }
 

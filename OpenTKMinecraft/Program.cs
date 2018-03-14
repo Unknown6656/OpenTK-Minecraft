@@ -1,5 +1,8 @@
-﻿using System.Diagnostics;
+﻿using System.Runtime.ExceptionServices;
+using System.Diagnostics;
+using System.Reflection;
 using System.Text;
+using System.IO;
 using System;
 
 using OpenTK.Graphics.OpenGL4;
@@ -10,12 +13,20 @@ namespace OpenTKMinecraft
     {
         public const int GL_VERSION_MAJ = 4;
         public const int GL_VERSION_MIN = 6;
-
+        public const string TEMP_DIR = ".tmp";
 
         [STAThread]
+        [HandleProcessCorruptedStateExceptions]
         public static int Main(string[] args)
         {
+            Assembly asm = typeof(Program).Assembly;
+            string dir = new FileInfo(asm.Location).Directory.FullName;
             int ret = 0;
+
+            Directory.SetCurrentDirectory(dir);
+
+            if (!Directory.Exists(TEMP_DIR))
+                Directory.CreateDirectory(TEMP_DIR);
 
             try
             {

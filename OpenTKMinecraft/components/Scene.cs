@@ -92,7 +92,6 @@ namespace OpenTKMinecraft.Components
                     StereoMode = CameraStereoMode.RightEye,
                 });
                 OpenGL32.glAccum(AccumulationOperation.Accumulate, 1);
-
                 OpenGL32.glAccum(AccumulationOperation.Return, 1);
             }
             else

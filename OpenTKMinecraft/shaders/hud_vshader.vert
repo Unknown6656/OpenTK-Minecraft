@@ -25,7 +25,7 @@ void main(void)
     gl_Position = position;
 
     vs_color = color;
-    vs_normal = normal;
-    vs_position = position;
+    vs_normal = normal.xyz;
+    vs_position = position.xyz;
     vs_texcoord = texcoord;
 }

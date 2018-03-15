@@ -58,12 +58,13 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="components\TextureSet.cs" />
     <Compile Include="components\Camera.cs" />
     <Compile Include="components\HUD.cs" />
     <Compile Include="Native.cs" />
     <Compile Include="components\Scene.cs" />
     <Compile Include="components\Light.cs" />
-    <Compile Include="components\AbstractGameObjects.cs" />
+    <Compile Include="components\GameObject.cs" />
     <Compile Include="components\ShaderProgram.cs" />
     <Compile Include="minecraft\Blocks.cs" />
     <Compile Include="minecraft\World.cs" />

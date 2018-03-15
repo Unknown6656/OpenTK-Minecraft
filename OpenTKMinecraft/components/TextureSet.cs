@@ -11,128 +11,6 @@ using OpenTKMinecraft.Minecraft;
 
 namespace OpenTKMinecraft.Components
 {
-    public interface IUpdatable
-    {
-        void Update(double time, double delta);
-    }
-
-    public interface IRenderable
-    {
-        void Render(Camera camera, CameraRenderData data);
-    }
-
-    public abstract class GameObject
-        : IDisposable
-        , IUpdatable
-    {
-        private static ulong _gameobjectcounter;
-        private protected Matrix4 _modelview;
-
-        public Renderable Model { get; private protected set; }
-        public Vector3 Rotation { get; private protected set; }
-        public Vector3 Scale { get; private protected set; }
-        public Vector4 Direction { get; private protected set; }
-        public Vector4 Position { get; private protected set; }
-        public float Velocity { get; private protected set; }
-        public Matrix4 ModelView => _modelview;
-        public ulong ID { get; }
-
-
-
-        public GameObject(Renderable model, Vector4 pos, Vector4 dir, Vector3 rot, Vector3 scale, float vel)
-        {
-            Model = model;
-            Position = pos;
-            Direction = dir;
-            Rotation = rot;
-            Velocity = vel;
-            Scale = scale;
-
-            ID = _gameobjectcounter++;
-        }
-
-        public virtual void Update(double time, double delta)
-        {
-            Position += Direction * (Velocity * (float)delta);
-
-            UpdateModelView();
-        }
-
-        private void UpdateModelView() =>
-            _modelview = Matrix4.CreateScale(Scale.X, Scale.Y, Scale.Z)
-                       * Matrix4.CreateRotationZ(Rotation.X)
-                       * Matrix4.CreateRotationY(Rotation.Y)
-                       * Matrix4.CreateRotationX(Rotation.Z)
-                       * Matrix4.CreateTranslation(Position.X, Position.Y, Position.Z);
-
-        public virtual void Render(Camera camera, CameraRenderData data)
-        {
-            Model.Program.Use();
-            Model.Bind();
-
-            UpdateModelView();
-
-            camera.Render(this, data);
-        }
-
-        public void Dispose() => Model?.Dispose();
-    }
-
-    public abstract class Renderable
-        : IDisposable
-    {
-        public ShaderProgram Program { get; internal protected set; }
-        public int VertexArray { get; private protected set; }
-        public int Buffer { get; private protected set; }
-        public int VerticeCount { get; private protected set; }
-
-
-        protected Renderable(ShaderProgram program, int vertexCount)
-        {
-            Program = program;
-            VerticeCount = vertexCount;
-
-            if (vertexCount > 0)
-            {
-                VertexArray = GL.GenVertexArray();
-                Buffer = GL.GenBuffer();
-
-                GL.BindVertexArray(VertexArray);
-                GL.BindBuffer(BufferTarget.ArrayBuffer, Buffer);
-            }
-        }
-
-        public virtual void Bind()
-        {
-            Program.Use();
-
-            if (VerticeCount > 0)
-                GL.BindVertexArray(VertexArray);
-        }
-
-        public virtual void Render() => Program.Use();
-
-        protected virtual void InitBuffer()
-        {
-        }
-
-        public void Dispose()
-        {
-            Dispose(true);
-
-            // GC.SuppressFinalize(this);
-        }
-
-        protected virtual void Dispose(bool disposing)
-        {
-            if (disposing && (VerticeCount > 0))
-            {
-                GL.DeleteVertexArray(VertexArray);
-                GL.DeleteBuffer(Buffer);
-            }
-        }
-    }
-
     public class TexturedVertexSet
         : Renderable
     {
@@ -237,6 +115,7 @@ namespace OpenTKMinecraft.Components
         private const int SZCNT = 4;
 
         internal static readonly Dictionary<BlockMaterial, TextureSet> KnownTextures = new Dictionary<BlockMaterial, TextureSet>();
+        private static readonly List<int> _disposed = new List<int>();
         private readonly Bitmap[] _imgs = new Bitmap[SZCNT * SZCNT];
         private int _size = int.MaxValue;
 
@@ -251,10 +130,12 @@ namespace OpenTKMinecraft.Components
         {
             TextureID = -1;
 
-            UpdateTexture(assoc, textures);
+            UpdateTexture(false, assoc, textures);
         }
 
-        internal void UpdateTexture(BlockMaterial? assoc, params (string Path, TextureType Type)[] textures)
+        internal void UpdateTexture(BlockMaterial? assoc, params (string Path, TextureType Type)[] textures) => UpdateTexture(true, assoc, textures);
+
+        private void UpdateTexture(bool forced, BlockMaterial? assoc, params (string Path, TextureType Type)[] textures)
         {
             if (assoc is BlockMaterial m)
             {
@@ -264,7 +145,14 @@ namespace OpenTKMinecraft.Components
                 AssociatedMaterial = m;
 
                 if (KnownTextures.ContainsKey(m))
-                    KnownTextures[m]?.Dispose();
+                    if (forced)
+                        KnownTextures[m]?.Dispose();
+                    else
+                    {
+                        TextureID = KnownTextures[m].TextureID;
+
+                        return;
+                    }
 
                 KnownTextures[m] = this;
             }
@@ -290,8 +178,10 @@ namespace OpenTKMinecraft.Components
                         throw new ArgumentException("All texture images must have a valid source path and be squared.", nameof(textures));
                     }
 
-            if ((_size < 1) || (_size == int.MaxValue))
+            if (_size < 1)
                 _size = 16;
+            else if (_size > 16384)
+                _size = 16384;
 
             TextureID = InitTexture();
         }
@@ -306,10 +196,14 @@ namespace OpenTKMinecraft.Components
         [HandleProcessCorruptedStateExceptions]
         protected override void Dispose(bool disposing)
         {
-            if (disposing)
+            if (disposing && !_disposed.Contains(TextureID))
                 try
                 {
                     GL.DeleteTexture(TextureID);
+
+                    _disposed.Add(TextureID);
+
+                    KnownTextures.Remove(AssociatedMaterial);
                 }
                 catch
                 {

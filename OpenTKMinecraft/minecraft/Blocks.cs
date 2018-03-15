@@ -15,6 +15,7 @@ namespace OpenTKMinecraft.Minecraft
         public bool IsActivelyGlowing => Glow != null;
         public bool Gravity { get; private set; }
         public bool Visible { get; private set; }
+        public bool Liquid { get; private set; }
         public string Name { get; }
 
 
@@ -35,6 +36,14 @@ namespace OpenTKMinecraft.Minecraft
                 ("resources/grass-spec.png", TextureType.Specular),
                 ("resources/grass-norm.png", TextureType.Normal)
             ),
+            [BlockMaterial.Water] = new BlockInfo("Water",
+                ("resources/water-diff.png", TextureType.Diffuse),
+                ("resources/water-disp.png", TextureType.Displacement),
+                ("resources/water-ambt.png", TextureType.AmbientOcclusion),
+                ("resources/water-spec.png", TextureType.Specular),
+                ("resources/water-norm.png", TextureType.Normal),
+                ("resources/water-flow.png", TextureType.Flow)
+            ) { Liquid = true },
             [BlockMaterial.Sand] = new BlockInfo("Sand",
                 ("resources/sand-diff.png", TextureType.Diffuse),
                 ("resources/sand-disp.png", TextureType.Displacement),
@@ -42,7 +51,6 @@ namespace OpenTKMinecraft.Minecraft
                 ("resources/sand-spec.png", TextureType.Specular),
                 ("resources/sand-norm.png", TextureType.Normal)
             ) {  Gravity = true },
-
             [BlockMaterial.Diamond] = new BlockInfo("Diamond",
                 ("resources/diamond-diff.png", TextureType.Diffuse),
                 ("resources/diamond-disp.png", TextureType.Displacement),
@@ -60,6 +68,11 @@ namespace OpenTKMinecraft.Minecraft
             ) { Glow = (Color4.Gold, 6, 0.005f) },
 
             // TODO
+
+            [BlockMaterial.__DEBUG__] = new BlockInfo("__DEBUG__",
+                ("resources/debug.png", TextureType.Diffuse),
+                ("resources/debug.png", TextureType.AmbientOcclusion)
+            )
         };
 
         public BlockInfo(string name, params (string, TextureType)[] tex)
@@ -88,8 +101,10 @@ namespace OpenTKMinecraft.Minecraft
         Air = 0,
         Stone = 1,
         Grass = 2,
+        Water = 10,
         Sand = 12,
         Diamond = 56,
         Glowstone = 89,
+        __DEBUG__ = 0xffffffff
     }
 }

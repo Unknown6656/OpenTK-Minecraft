@@ -66,8 +66,8 @@ namespace OpenTKMinecraft
                     IsStereoscopic = false,
                 },
             };
-            //_scene.Lights.Add(Light.CreateDirectionalLight(new Vector3(-1, -1, 0), Color.WhiteSmoke));
-            //_scene.Lights.Add(Light.CreatePointLight(new Vector3(0, 0, 2), Color.Wheat, 10));
+            _scene.Lights.Add(Light.CreateDirectionalLight(new Vector3(-1, -1, 0), Color.WhiteSmoke));
+            _scene.Lights.Add(Light.CreatePointLight(new Vector3(0, 0, 2), Color.Wheat, 10));
 
             BuildScene();
             ResetCamera();
@@ -79,12 +79,14 @@ namespace OpenTKMinecraft
 
         internal void BuildScene()
         {
+            _scene.World[0, 15, 0].Material = BlockMaterial.__DEBUG__;
+
             for (int i = 0; i < 4; ++i)
                 for (int j = 0; j < 4; ++j)
                     if ((i == 0) || (i == 3) || (j == 0) || (j == 3))
                         _scene.World[1 - i, j + 1, 0].Material = ((i ^ j) & 1) != 0 ? BlockMaterial.Stone : BlockMaterial.Diamond;
 
-            int side = 9;
+            int side = 3; // 9
 
             for (int i = -side; i <= side; ++i)
                 for (int j = -side; j <= side; ++j)
@@ -100,7 +102,19 @@ namespace OpenTKMinecraft
                         _scene.World[i, y, j].Material = BlockMaterial.Grass;
                 }
 
-            _scene.World[6, 1, 6].Material = BlockMaterial.Glowstone;
+            (int xp, int yp) = (15, 15);
+
+            //_scene.World[xp, 3, yp].Material = BlockMaterial.Glowstone;
+
+            for (int i = -2; i <= 2; ++i)
+                for (int j = -2; j <= 2; ++j)
+                    if ((i >= -1) && (i < 2) && (j >= -1) && (j < 2))
+                    {
+                        _scene.World[xp + i, 0, yp + j].Material = BlockMaterial.Water;
+                        _scene.World[xp + i, -1, yp + j].Material = BlockMaterial.Stone;
+                    }
+                    else
+                        _scene.World[xp + i, 0, yp + j].Material = BlockMaterial.Stone;
 
             // _scene.World.PlaceCustomBlock(4, 1, 0, WavefrontFile.FromPath("resources/center-piece.obj"));
         }
@@ -136,7 +150,7 @@ namespace OpenTKMinecraft
 
             Time += e.Time;
 
-            //_scene.Lights[1].Position = Matrix3.CreateRotationY((float)Time) * new Vector3(0, 2, 4);
+            _scene.Lights[1].Position = Matrix3.CreateRotationY((float)Time) * new Vector3(0, 2, 4);
 
             _hud.Update(Time, e.Time);
             _scene.Update(Time, e.Time, (float)Width / Height);

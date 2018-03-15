@@ -44,6 +44,12 @@ struct Light
     uint Mode;
     uint IsActive;
 };
+struct FlowInfo
+{
+    float lerpv;
+    vec2 flow_uv_1;
+    vec2 flow_uv_2;
+};
 
 layout (location = 6) uniform bool paused;
 layout (location = 8) uniform float window_width;
@@ -80,6 +86,18 @@ in mat3 vs_TBN;
 out vec4 color;
 
 
+float lerp(float v1, float v2, float fac)
+{
+    fac = max(0, min(fac, 0));
+
+    return (1 - fac) * v1 + fac * v2;
+}
+
+float map(float value, float l1, float h1, float l2, float h2)
+{
+    return l2 + (value - l1) * (h2 - l2) / (h1 - l1);
+}
+
 vec4 _texture(int type, vec2 uv, int mode)
 {
     vec2 coord;
@@ -110,6 +128,14 @@ vec4 _texture(int type, vec2 uv, int mode)
     coord.y += int(type / 4) * 0.25;
     
     return texture(tex, coord);
+}
+
+vec4 _flowtex(int type, vec2 uv, FlowInfo nfo, int mode)
+{
+    vec4 col1 = _texture(type, uv + nfo.flow_uv_1, mode);
+    vec4 col2 = _texture(type, uv + nfo.flow_uv_2, mode);
+
+    return lerp(col1, col2, nfo.lerpv);
 }
 
 vec3 getlightdir(vec3 p, Light l)
@@ -154,8 +180,30 @@ vec3 getrawlightcolor(vec3 p, Light l)
         return vec3(0);
 }
 
+FlowInfo initflow(float flow_power, float flow_speed)
+{
+    flow_speed *= vs_time;
+    
+    vec4 flow = _texture(TEX_FLOW, vs_texcoord, MODE_CLAMP);
+    vec2 remap = (flow.rg - vec2(0.5)) * flow_power;
+    
+    FlowInfo nfo;
+    
+    nfo.lerpv = abs(2 * (0.5 - mod(flow_speed, 1.0))) * flow.a;
+    nfo.flow_uv_1 = remap * mod(flow_speed, 1.0) * flow.a;
+    nfo.flow_uv_2 = remap * mod(flow_speed + 0.5, 1.0) * flow.a;
+
+    return FlowInfo;
+}
+
 void main(void)
 {
+    FlowInfo nfo = initflow(-0.5, 1);
+
+    color = _flowtex(TEX_DIFF, vs_texcoord, nfo, MODE_CLAMP);
+    return;
+
+
     vec4 diffuse = _texture(TEX_DIFF, vs_texcoord, MODE_CLAMP);
     vec4 ambient = _texture(TEX_AMBT, vs_texcoord, MODE_CLAMP);
     vec4 glow = _texture(TEX_GLOW, vs_texcoord, MODE_CLAMP);

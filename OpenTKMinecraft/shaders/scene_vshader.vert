@@ -48,7 +48,7 @@ void main(void)
     ));
     vs_worldpos = (model_view * vec4(position, 1)).xyz;
     vs_eyedir = normalize(cam_position - vs_worldpos);
-    vs_texcoord = color.yx;
+    vs_texcoord = vec2(color.y, 1 - color.x);
     vs_position = position;
     vs_color = color;
     vs_time = time;

@@ -264,6 +264,8 @@ namespace OpenTKMinecraft.Minecraft
 
         public void SetScale(float x, float y, float z) => Scale = new Vector3(x, y, z);
 
+        public void Move(float δx, float δy, float δz) => Position += new Vector4(δx, δy, δz, 0);
+
         public bool HasCollision(Vector3 point)
         {
             if (AABB is ValueTuple<Vector3, Vector3> aabb)

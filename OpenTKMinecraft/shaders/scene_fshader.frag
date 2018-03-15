@@ -86,7 +86,7 @@ in mat3 vs_TBN;
 out vec4 color;
 
 
-float lerp(float v1, float v2, float fac)
+vec4 lerp(vec4 v1, vec4 v2, float fac)
 {
     fac = max(0, min(fac, 0));
 
@@ -130,12 +130,19 @@ vec4 _texture(int type, vec2 uv, int mode)
     return texture(tex, coord);
 }
 
-vec4 _flowtex(int type, vec2 uv, FlowInfo nfo, int mode)
+vec4 _flowtex(int type, vec2 uv, FlowInfo nfo)
 {
-    vec4 col1 = _texture(type, uv + nfo.flow_uv_1, mode);
-    vec4 col2 = _texture(type, uv + nfo.flow_uv_2, mode);
+    float val = nfo.lerpv;
 
-    return lerp(col1, col2, nfo.lerpv);
+    if (val < 0.001)
+        return _texture(type, uv, MODE_REPEAT);
+    else
+    {
+        vec4 col1 = _texture(type, uv + nfo.flow_uv_1, MODE_REPEAT);
+        vec4 col2 = _texture(type, uv + nfo.flow_uv_2, MODE_REPEAT);
+
+        return lerp(col1, col2, val);
+    }
 }
 
 vec3 getlightdir(vec3 p, Light l)
@@ -184,7 +191,7 @@ FlowInfo initflow(float flow_power, float flow_speed)
 {
     flow_speed *= vs_time;
     
-    vec4 flow = _texture(TEX_FLOW, vs_texcoord, MODE_CLAMP);
+    vec4 flow = _texture(TEX_FLOW, vs_texcoord, MODE_REPEAT);
     vec2 remap = (flow.rg - vec2(0.5)) * flow_power;
     
     FlowInfo nfo;
@@ -193,23 +200,19 @@ FlowInfo initflow(float flow_power, float flow_speed)
     nfo.flow_uv_1 = remap * mod(flow_speed, 1.0) * flow.a;
     nfo.flow_uv_2 = remap * mod(flow_speed + 0.5, 1.0) * flow.a;
 
-    return FlowInfo;
+    return nfo;
 }
 
 void main(void)
 {
-    FlowInfo nfo = initflow(-0.5, 1);
-
-    color = _flowtex(TEX_DIFF, vs_texcoord, nfo, MODE_CLAMP);
-    return;
-
-
-    vec4 diffuse = _texture(TEX_DIFF, vs_texcoord, MODE_CLAMP);
-    vec4 ambient = _texture(TEX_AMBT, vs_texcoord, MODE_CLAMP);
-    vec4 glow = _texture(TEX_GLOW, vs_texcoord, MODE_CLAMP);
-    vec3 specular = _texture(TEX_SPEC, vs_texcoord, MODE_CLAMP).rgb;
-    vec3 gloss = _texture(TEX_GLSS, vs_texcoord, MODE_CLAMP).rgb * MAX_GLOSS;
-    vec3 N = _texture(TEX_NORM, vs_texcoord, MODE_CLAMP).xyz;
+    // FlowInfo nfo = initflow(-0.5, 1);
+    
+    vec4 diffuse = _texture(TEX_DIFF, vs_texcoord, MODE_REPEAT);
+    vec4 ambient = _texture(TEX_AMBT, vs_texcoord, MODE_REPEAT);
+    vec4 glow = _texture(TEX_GLOW, vs_texcoord, MODE_REPEAT);
+    vec3 specular = _texture(TEX_SPEC, vs_texcoord, MODE_REPEAT).rgb;
+    vec3 gloss = _texture(TEX_GLSS, vs_texcoord, MODE_REPEAT).rgb * MAX_GLOSS;
+    vec3 N = _texture(TEX_NORM, vs_texcoord, MODE_REPEAT).xyz;
     vec3 V = vs_TBN * vs_eyedir;
     vec3 H = normalize(V + N);
     

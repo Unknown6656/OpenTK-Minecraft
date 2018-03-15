@@ -36,6 +36,8 @@ out mat3 vs_TBN;
 
 void main(void)
 {
+    const float tex_epsilon = 1 / 16.0;
+
     gl_Position = projection * model_view * vec4(position, 1);
 
     vs_normal = normalize((mat_normal * vec4(normal, 0)).xyz);
@@ -48,7 +50,7 @@ void main(void)
     ));
     vs_worldpos = (model_view * vec4(position, 1)).xyz;
     vs_eyedir = normalize(cam_position - vs_worldpos);
-    vs_texcoord = vec2(color.y, 1 - color.x);
+    vs_texcoord = tex_epsilon + vec2(color.y, 1 - color.x) * (1 - 2 * tex_epsilon);
     vs_position = position;
     vs_color = color;
     vs_time = time;

@@ -86,7 +86,7 @@ namespace OpenTKMinecraft
                     if ((i == 0) || (i == 3) || (j == 0) || (j == 3))
                         _scene.World[1 - i, j + 1, 0].Material = ((i ^ j) & 1) != 0 ? BlockMaterial.Stone : BlockMaterial.Diamond;
 
-            int side = 3; // 9
+            int side = 6; // 9
 
             for (int i = -side; i <= side; ++i)
                 for (int j = -side; j <= side; ++j)
@@ -110,8 +110,10 @@ namespace OpenTKMinecraft
                 for (int j = -2; j <= 2; ++j)
                     if ((i >= -1) && (i < 2) && (j >= -1) && (j < 2))
                     {
-                        _scene.World[xp + i, 0, yp + j].Material = BlockMaterial.Water;
                         _scene.World[xp + i, -1, yp + j].Material = BlockMaterial.Stone;
+
+                        _scene.World[xp + i, 0, yp + j].Material = BlockMaterial.Water;
+                        _scene.World[xp + i, 0, yp + j].Move(0, -.15f, 0);
                     }
                     else
                         _scene.World[xp + i, 0, yp + j].Material = BlockMaterial.Stone;

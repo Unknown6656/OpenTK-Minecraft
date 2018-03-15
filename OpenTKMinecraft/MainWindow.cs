@@ -52,13 +52,14 @@ namespace OpenTKMinecraft
 
             _hud = new HUD(this, new ShaderProgram(
                 "HUD Shader",
-                (ShaderType.VertexShader, "shaders/hud_vshader.vert"),
-                (ShaderType.FragmentShader, "shaders/hud_fshader.frag")
+                (ShaderProgramType.VertexShader, "shaders/hud_vshader.vert"),
+                (ShaderProgramType.FragmentShader, "shaders/hud_fshader.frag")
             ));
             _scene = new Scene(this, new ShaderProgram(
                 "Scene Shader",
-                (ShaderType.VertexShader, "shaders/scene_vshader.vert"),
-                (ShaderType.FragmentShader, "shaders/scene_fshader.frag")
+                (ShaderProgramType.VertexShader, "shaders/scene_vshader.vert"),
+                (ShaderProgramType.FragmentShader, "shaders/scene_fshader.frag"),
+                (ShaderProgramType.ShaderInclude, "shaders/scene_common.glsl")
             ))
             {
                 Camera = new PlayerCamera

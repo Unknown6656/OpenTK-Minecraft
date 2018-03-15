@@ -34,12 +34,12 @@ namespace OpenTKMinecraft.Components
             }
         }
 
-        private (ShaderType, string)[] _shaders;
+        private (ShaderProgramType, string)[] _shaders;
 
 
         static ShaderProgram() => KnownPrograms = new Dictionary<int, ShaderProgram>();
 
-        public ShaderProgram(string name, params (ShaderType, string)[] shaders)
+        public ShaderProgram(string name, params (ShaderProgramType, string)[] shaders)
         {
             Name = name;
             _shaders = shaders;
@@ -50,11 +50,18 @@ namespace OpenTKMinecraft.Components
             PolygonMode = PolygonMode.Fill;
         }
 
-        private int CompileShader(ShaderType type, string path)
+        private int CompileShader(ShaderProgramType type, string path)
         {
-            int ptr = GL.CreateShader(type);
+            int ptr = GL.CreateShader((ShaderType)type);
+            string code = File.ReadAllText(path);
+            string includes = string.Join("\n", from s in _shaders
+                                                where s.Item1 == ShaderProgramType.ShaderInclude
+                                                select File.ReadAllText(s.Item2));
 
-            GL.ShaderSource(ptr, Regex.Replace(File.ReadAllText(path), @"\#version\s*[0-9]{3}", $"#version {Program.GL_VERSION_MAJ}{Program.GL_VERSION_MIN}0", RegexOptions.Compiled | RegexOptions.IgnoreCase));
+            code = Regex.Replace(code, @"\#version\s*([0-9]{3}|xxx)\s*\n", $"#version {Program.GL_VERSION_MAJ}{Program.GL_VERSION_MIN}0", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+            code = Regex.Replace(code, @"\#include\s*\n", $"// begin include\n{includes}\n// end include\n", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+            GL.ShaderSource(ptr, code);
             GL.CompileShader(ptr);
 
             Console.WriteLine($"({Name}) GL.CompileShader[{type}]:\n{string.Join("\n", (GL.GetShaderInfoLog(ptr) ?? "").Split('\n').Select(x => "\t" + x))}");
@@ -65,7 +72,9 @@ namespace OpenTKMinecraft.Components
         private int CreateProgram()
         {
             int prog = GL.CreateProgram();
-            IEnumerable<int> sh = from t in _shaders select CompileShader(t.Item1, t.Item2);
+            IEnumerable<int> sh = from t in _shaders
+                                  where t.Item1 != ShaderProgramType.ShaderInclude
+                                  select CompileShader(t.Item1, t.Item2);
 
             foreach (int s in sh)
                 GL.AttachShader(prog, s);
@@ -108,5 +117,18 @@ namespace OpenTKMinecraft.Components
             foreach (ShaderProgram p in KnownPrograms.Values.ToArray())
                 p.Dispose();
         }
+    }
+
+    public enum ShaderProgramType
+    {
+        ShaderInclude = 0,
+        FragmentShader = 0x8B30,
+        FragmentShaderArb = 0x8B30,
+        VertexShader = 0x8B31,
+        VertexShaderArb = 0x8B31,
+        GeometryShader = 0x8DD9,
+        TessEvaluationShader = 0x8E87,
+        TessControlShader = 0x8E88,
+        ComputeShader = 0x91B9
     }
 }

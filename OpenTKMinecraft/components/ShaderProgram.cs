@@ -54,12 +54,12 @@ namespace OpenTKMinecraft.Components
         {
             int ptr = GL.CreateShader((ShaderType)type);
             string code = File.ReadAllText(path);
-            string includes = string.Join("\n", from s in _shaders
-                                                where s.Item1 == ShaderProgramType.ShaderInclude
-                                                select File.ReadAllText(s.Item2));
+            IEnumerable<string> includes = from s in _shaders
+                                           where s.Item1 == ShaderProgramType.ShaderInclude
+                                           select $"// begin include '{s.Item2}'\n{File.ReadAllText(s.Item2)}\n// end include '{s.Item2}'\n";
 
             code = Regex.Replace(code, @"\#version\s*([0-9]{3}|xxx)\s*\n", $"#version {Program.GL_VERSION_MAJ}{Program.GL_VERSION_MIN}0", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-            code = Regex.Replace(code, @"\#include\s*\n", $"// begin include\n{includes}\n// end include\n", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+            code = Regex.Replace(code, @"\#include\s*\n", string.Join("\n", includes), RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
             GL.ShaderSource(ptr, code);
             GL.CompileShader(ptr);

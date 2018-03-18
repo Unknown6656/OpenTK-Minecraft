@@ -41,10 +41,10 @@ vec4 _texture(int type, vec2 uv, int mode)
     if (mode == MODE_CLAMP)
         coord = vec2(clamp(uv.x, 0.0, 1.0), clamp(uv.y, 0.0, 1.0));
     else if (mode == MODE_REPEAT)
-        coord = vec2(mod(1 + uv.x, 1.0), mod(1 + uv.y, 1.0));
+        coord = vec2(mod(2 + uv.x, 1.0), mod(2 + uv.y, 1.0));
     else if (mode == MODE_MIRROR)
     {
-        coord = vec2(mod(2 + uv.x, 2.0), mod(2 + uv.y, 2.0));
+        coord = vec2(mod(4 + uv.x, 2.0), mod(4 + uv.y, 2.0));
 
         if (coord.x > 1)
             coord.x = 2 - coord.x;
@@ -66,16 +66,16 @@ vec4 _texture(int type, vec2 uv, int mode)
     return texture(tex, coord);
 }
 
-vec4 _flowtex(int type, vec2 uv, FlowInfo nfo)
+vec4 _flowtex(int type, vec2 uv, FlowInfo nfo, int mode)
 {
     float val = nfo.lerpv;
 
-    if (val < 0.001)
-        return _texture(type, uv, MODE_REPEAT);
+    if (val < FLOW_EPSILON)
+        return _texture(type, uv, mode);
     else
     {
-        vec4 col1 = _texture(type, uv + nfo.flow_uv_1, MODE_REPEAT);
-        vec4 col2 = _texture(type, uv + nfo.flow_uv_2, MODE_REPEAT);
+        vec4 col1 = _texture(type, uv + nfo.flow_uv_1, mode);
+        vec4 col2 = _texture(type, uv + nfo.flow_uv_2, mode);
 
         return lerp(col1, col2, val);
     }
@@ -141,14 +141,15 @@ FlowInfo initflow(float flow_power, float flow_speed)
 
 void main(void)
 {
-    // FlowInfo nfo = initflow(-0.5, 1);
+    FlowInfo nfo = initflow(-0.5, 1);
     
-    vec4 diffuse = _texture(TEX_DIFF, vs_texcoord, MODE_REPEAT);
-    vec4 ambient = _texture(TEX_AMBT, vs_texcoord, MODE_REPEAT);
-    vec4 glow = _texture(TEX_GLOW, vs_texcoord, MODE_REPEAT);
-    vec3 specular = _texture(TEX_SPEC, vs_texcoord, MODE_REPEAT).rgb;
-    vec3 gloss = _texture(TEX_GLSS, vs_texcoord, MODE_REPEAT).rgb * MAX_GLOSS;
-    vec3 N = _texture(TEX_NORM, vs_texcoord, MODE_REPEAT).xyz;
+    int texmode = nfo.lerpv < FLOW_EPSILON ? MODE_CLAMP : MODE_REPEAT;
+    vec4 diffuse = _flowtex(TEX_DIFF, vs_texcoord, nfo, texmode);
+    vec4 ambient = _flowtex(TEX_AMBT, vs_texcoord, nfo, texmode);
+    vec4 glow = _flowtex(TEX_GLOW, vs_texcoord, nfo, texmode);
+    vec3 specular = _flowtex(TEX_SPEC, vs_texcoord, nfo, texmode).rgb;
+    vec3 gloss = _flowtex(TEX_GLSS, vs_texcoord, nfo, texmode).rgb * MAX_GLOSS;
+    vec3 N = _flowtex(TEX_NORM, vs_texcoord, nfo, texmode).xyz;
     vec3 V = vs_TBN * vs_eyedir;
     vec3 H = normalize(V + N);
     

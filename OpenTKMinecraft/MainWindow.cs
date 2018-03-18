@@ -74,7 +74,7 @@ namespace OpenTKMinecraft
             ResetCamera();
 
             CursorVisible = false;
-            VSync = VSyncMode.Adaptive;
+            VSync = VSyncMode.Off;
             WindowState = WindowState.Maximized;
         }
 
@@ -235,6 +235,12 @@ namespace OpenTKMinecraft
             if (kstate.IsKeyDown(Key.Number4))
             {
                 Camera.IsStereoscopic ^= true;
+
+                Thread.Sleep(100);
+            }
+            if (kstate.IsKeyDown(Key.V))
+            {
+                VSync = VSync == VSyncMode.Off ? VSyncMode.On : VSyncMode.Off;
 
                 Thread.Sleep(100);
             }

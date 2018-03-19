@@ -124,7 +124,7 @@ FlowInfo initflow(float flow_power, float flow_speed)
 void main(void)
 {
     FlowInfo nfo = initflow(-0.5, 1);
-    
+
     int texmode = nfo.lerpv < FLOW_EPSILON ? MODE_CLAMP : MODE_REPEAT;
     vec4 diffuse = _flowtex(TEX_DIFF, vs_texcoord, nfo, texmode);
     vec4 ambient = _flowtex(TEX_AMBT, vs_texcoord, nfo, texmode);

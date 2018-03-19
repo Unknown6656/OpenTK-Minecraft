@@ -55,7 +55,7 @@ namespace OpenTKMinecraft.Components
         private int CompileShader(ShaderProgramType type, string path)
         {
             Regex reg_include = new Regex(@"\#include\s*\""\s*(?<name>[^\r\n]+)\s*\""\s*(\r|\n)+", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-            Regex reg_if = new Regex(@"\#if\s+(?<condition>[^\r\n]+)(\r|\n)+(?<code>.+)(\r|\n)+#endif\s*(\r|\n)+", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline);
+            Regex reg_if = new Regex(@"\#if\s+(?<condition>[^\r\n\#]+)(\r|\n)+(?<code>[^\#]+)(\r|\n)+\#endif\s*(\r|\n)+", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline);
             int ptr = GL.CreateShader((ShaderType)type);
             string code = File.ReadAllText(path);
 
@@ -81,11 +81,12 @@ namespace OpenTKMinecraft.Components
             while (reg_if.IsMatch(code))
                 code = reg_if.Replace(code, m =>
                 {
+                    string shadertpstr = type.ToString().Replace("ShaderArb", "Shader").Replace("Shader", "_SHADER").ToUpper();
                     string condition = m.Groups["condition"].ToString().Trim();
                     string content = m.Groups["code"].ToString();
                     bool cond_met = false;
 
-                    cond_met |= condition.ToUpper() == type.ToString().Replace("Shader", "_SHADER").ToUpper();
+                    cond_met |= condition.ToUpper() == shadertpstr;
                     // todo : more expressions ?
 
                     return cond_met ? '\n' + content + '\n' : "";

@@ -59,7 +59,7 @@ namespace OpenTKMinecraft.Components
             GL.Viewport(0, 0, Window.Width, Window.Height);
             GL.LineWidth(10);
             GL.PointSize(10);
-            GL.Uniform1(WINDOW_TIME, time);
+            GL.VertexAttrib1(WINDOW_TIME, time);
             GL.Uniform1(WINDOW_WIDTH, width);
             GL.Uniform1(WINDOW_HEIGHT, height);
             GL.Uniform1(WINDOW_PAUSED, Window._paused ? 1 : 0);

@@ -33,7 +33,7 @@ namespace OpenTKMinecraft
         public double Time { private set; get; }
         public string[] Arguments { get; }
 
-        private AfterEffectShaderProgram<Scene> _scenefx;
+        private PostEffectShaderProgram<Scene> _scenefx;
         private int _mousex, _mousey;
 
         public HUD HUD { private set; get; }
@@ -41,7 +41,7 @@ namespace OpenTKMinecraft
 
 
         public MainWindow(string[] args)
-            : base(1920, 1080, new GraphicsMode(new ColorFormat(8, 8, 8, 8), 16, 16, 4), nameof(MainWindow), GameWindowFlags.Default, DisplayDevice.Default, Program.GL_VERSION_MAJ, Program.GL_VERSION_MIN, GraphicsContextFlags.ForwardCompatible)
+            : base(1920, 1080, new GraphicsMode(new ColorFormat(32, 32, 32, 32), 32, 0, 4), nameof(MainWindow), GameWindowFlags.Default, DisplayDevice.Default, Program.GL_VERSION_MAJ, Program.GL_VERSION_MIN, GraphicsContextFlags.ForwardCompatible)
         {
             Arguments = args;
             MouseSensitivityFactor = 2;
@@ -52,7 +52,7 @@ namespace OpenTKMinecraft
         {
             Closed += (s, a) => Exit();
 
-            _scenefx = new AfterEffectShaderProgram<Scene>(
+            _scenefx = new PostEffectShaderProgram<Scene>(
                 new Scene(this, new ShaderProgram(
                     "Scene Shader",
                     new[] { "SCENE" },
@@ -147,7 +147,7 @@ namespace OpenTKMinecraft
 
         public override void Exit()
         {
-            Scene.Dispose();
+            _scenefx.Dispose();
             HUD.Dispose();
 
             ShaderProgram.DisposeAll();
@@ -176,9 +176,7 @@ namespace OpenTKMinecraft
         {
             Title = $"{1 / e.Time:F2} FPS";
 
-            GL.ClearColor(new Color4(.2f, .3f, .5f, 1f));
-
-            Scene.Render(Time, Width, Height);
+            _scenefx.Render(Time, Width, Height);
             HUD.Render(Time, Width, Height);
 
             SwapBuffers();
@@ -249,6 +247,12 @@ namespace OpenTKMinecraft
             if (kstate.IsKeyDown(Key.V))
             {
                 VSync = VSync == VSyncMode.Off ? VSyncMode.On : VSyncMode.Off;
+
+                Thread.Sleep(100);
+            }
+            if (kstate.IsKeyDown(Key.X))
+            {
+                _scenefx.UsePostEffect ^= true;
 
                 Thread.Sleep(100);
             }

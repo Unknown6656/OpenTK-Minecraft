@@ -54,8 +54,11 @@ namespace OpenTKMinecraft.Components
 
         public void Render(double time, float width, float height)
         {
+            GL.ClearColor(new Color4(.2f, .3f, .5f, 1f));
+            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
             GL.Enable(EnableCap.Texture2D);
             GL.Enable(EnableCap.DepthTest);
+            GL.DepthFunc(DepthFunction.Less);
             GL.Enable(EnableCap.CullFace);
             GL.CullFace(CullFaceMode.Back);
 

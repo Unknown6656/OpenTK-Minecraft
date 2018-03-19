@@ -11,6 +11,6 @@ void main(void)
 {
     gl_Position = position;
 
-    uv = position.xy;
+    uv = position.xy + 1;
     vs_time = time;
 }

@@ -35,14 +35,17 @@ namespace OpenTKMinecraft.Components
         {
             set
             {
-                Use();
+                _mode = value;
 
-                GL.PolygonMode(MaterialFace.FrontAndBack, value);
+                Use();
             }
+            get => _mode;
         }
 
         private readonly (ShaderProgramType Type, string Path)[] _shaders;
         private readonly Dictionary<string, int> _includes;
+        private PolygonMode _mode = PolygonMode.Fill;
+        private bool _disposed;
 
 
         static ShaderProgram() => KnownPrograms = new Dictionary<int, ShaderProgram>();
@@ -141,7 +144,15 @@ namespace OpenTKMinecraft.Components
             return prog;
         }
 
-        public void Use() => GL.UseProgram(ID);
+        public void Use()
+        {
+            if (!_disposed)
+            {
+                // precaution
+                GL.UseProgram(ID);
+                GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode);
+            }
+        }
 
         public void Use(Action f)
         {
@@ -151,8 +162,15 @@ namespace OpenTKMinecraft.Components
             GL.UseProgram(0);
         }
 
+        public override string ToString() => $"'{Name}' ({ID:x4}h) : {string.Join(", ", _shaders.Select(x => x.Type.ToString()))}; Constants: {string.Join(", ", CompiletimeConstants)}";
+
         public void Dispose()
         {
+            if (_disposed)
+                return;
+            else
+                _disposed = true;
+
             GL.UseProgram(0);
             GL.DeleteProgram(ID);
 
@@ -168,10 +186,10 @@ namespace OpenTKMinecraft.Components
         }
     }
 
-    public unsafe sealed class AfterEffectShaderProgram<T>
+    public unsafe sealed class PostEffectShaderProgram<T>
         : IShaderTarget
         , IDisposable
-        where T : class, IShaderTarget
+        where T : class, IShaderTarget, IDisposable
     {
         private static readonly Vector4[] _vertices = new[]
         {
@@ -182,52 +200,59 @@ namespace OpenTKMinecraft.Components
             new Vector4(1, -1, 0, 1),
             new Vector4(1, 1, 0, 1),
         };
-        private readonly int _vertexarr, _vertexbuff, _quadtex;
+        private readonly int _vertexarr, _vertexbuff, _coltex, _deptex;
         private bool disposed;
 
-        public int RenderedTexureID { get; }
+        public bool UsePostEffect { set; get; } = true;
+        public int RenderedColorTextureID { get; }
+        public int RenderedDepthTextureID { get; }
         public ShaderProgram Program { get; }
         public MainWindow Window { get; }
         public int FramebufferID { get; }
-        public int DepthbufferID { get; }
         public T Object { get; }
 
 
-        public AfterEffectShaderProgram(T obj, ShaderProgram p, MainWindow win)
+        public PostEffectShaderProgram(T obj, ShaderProgram p, MainWindow win)
         {
             Object = obj;
             Window = win;
             Program = p;
-            Program.Use();
 
             _vertexarr = GL.GenVertexArray();
             _vertexbuff = GL.GenBuffer();
-            _quadtex = GL.GetUniformLocation(Program.ID, "tex");
 
+            GL.BindVertexArray(_vertexarr);
+            GL.BindBuffer(BufferTarget.ArrayBuffer, _vertexbuff);
             GL.NamedBufferStorage(_vertexbuff, sizeof(Vector4) * _vertices.Length, _vertices, BufferStorageFlags.MapWriteBit);
-            GL.VertexArrayAttribBinding(_vertexarr, AFTEREFFECT_VERTEX_POSITION, 0);
-            GL.EnableVertexArrayAttrib(_vertexarr, AFTEREFFECT_VERTEX_POSITION);
-            GL.VertexArrayAttribFormat(_vertexarr, AFTEREFFECT_VERTEX_POSITION, 4, VertexAttribType.Float, false, 0);
+            GL.VertexArrayAttribBinding(_vertexarr, POSTRENDER_VERTEX_POSITION, 0);
+            GL.EnableVertexArrayAttrib(_vertexarr, POSTRENDER_VERTEX_POSITION);
+            GL.VertexArrayAttribFormat(_vertexarr, POSTRENDER_VERTEX_POSITION, 4, VertexAttribType.Float, false, 0);
             GL.VertexArrayVertexBuffer(_vertexarr, 0, _vertexbuff, IntPtr.Zero, sizeof(Vector4));
 
-            GL.GetError(); // clear error
-            GL.CreateFramebuffers(1, out int buff);
-            GL.CreateTextures(TextureTarget.Texture2D, 1, out int tex);
-            GL.BindTexture(TextureTarget.Texture2D, tex);
-            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgb, Window.Width, Window.Height, 0, PixelFormat.Rgb, PixelType.UnsignedByte, IntPtr.Zero);
+            FramebufferID = GL.GenFramebuffer();
+
+            GL.BindFramebuffer(FramebufferTarget.Framebuffer, FramebufferID);
+
+            RenderedColorTextureID = GL.GenTexture();
+
+            GL.BindTexture(TextureTarget.Texture2D, RenderedColorTextureID);
+            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba32f, Window.Width, Window.Height, 0, PixelFormat.Rgba, PixelType.Float, IntPtr.Zero);
             GL.TexParameterI(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, new[] { (int)TextureMagFilter.Nearest });
             GL.TexParameterI(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, new[] { (int)TextureMinFilter.Nearest });
             GL.TexParameterI(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, new[] { (int)TextureWrapMode.ClampToEdge });
             GL.TexParameterI(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, new[] { (int)TextureWrapMode.ClampToEdge });
 
-            FramebufferID = buff;
-            RenderedTexureID = tex;
-            DepthbufferID = GL.GenRenderbuffer();
+            RenderedDepthTextureID = GL.GenTexture();
 
-            GL.BindRenderbuffer(RenderbufferTarget.Renderbuffer, DepthbufferID);
-            GL.RenderbufferStorage(RenderbufferTarget.Renderbuffer, RenderbufferStorage.DepthComponent, Window.Width, Window.Height);
-            GL.FramebufferRenderbuffer(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthAttachment, RenderbufferTarget.Renderbuffer, DepthbufferID);
-            GL.FramebufferTexture(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, RenderedTexureID, 0);
+            GL.BindTexture(TextureTarget.Texture2D, RenderedDepthTextureID);
+            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.DepthComponent, Window.Width, Window.Height, 0, PixelFormat.DepthComponent, PixelType.Float, IntPtr.Zero);
+            GL.TexParameterI(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, new[] { (int)TextureMagFilter.Nearest });
+            GL.TexParameterI(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, new[] { (int)TextureMinFilter.Nearest });
+            GL.TexParameterI(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, new[] { (int)TextureWrapMode.ClampToEdge });
+            GL.TexParameterI(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, new[] { (int)TextureWrapMode.ClampToEdge });
+
+            GL.FramebufferTexture(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, RenderedColorTextureID, 0);
+            GL.FramebufferTexture(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthAttachment, RenderedDepthTextureID, 0);
             GL.DrawBuffers(1, new[] { DrawBuffersEnum.ColorAttachment0 });
 
             FramebufferErrorCode err = GL.CheckFramebufferStatus(FramebufferTarget.Framebuffer);
@@ -235,10 +260,17 @@ namespace OpenTKMinecraft.Components
             if (err != FramebufferErrorCode.FramebufferComplete)
                 throw new Exception($"The framebuffer initialization failed as follows:  {err}/{GL.GetError()}");
 
+            GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+
+            Program.Use();
+
+            _coltex = GL.GetUniformLocation(Program.ID, "renderedColor");
+            _deptex = GL.GetUniformLocation(Program.ID, "renderedDepth");
+
             Window.Resize += Win_Resize;
         }
 
-        ~AfterEffectShaderProgram() => Dispose();
+        ~PostEffectShaderProgram() => Dispose();
 
         public void Dispose()
         {
@@ -251,24 +283,29 @@ namespace OpenTKMinecraft.Components
 
                 Window.Resize -= Win_Resize;
 
-                GL.DeleteTexture(RenderedTexureID);
+                Program.Use();
+
+                GL.DeleteTexture(RenderedColorTextureID);
+                GL.DeleteTexture(RenderedDepthTextureID);
                 GL.DeleteFramebuffer(FramebufferID);
-                GL.DeleteRenderbuffer(DepthbufferID);
                 GL.DeleteVertexArray(_vertexarr);
                 GL.DeleteBuffer(_vertexbuff);
+
+                Program.Dispose();
+                Object.Dispose();
             }
         }
 
         public void Render(double time, float width, float height)
         {
-            Program.Use();
-
-            GL.BindFramebuffer(FramebufferTarget.Framebuffer, FramebufferID);
-            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-            GL.Enable(EnableCap.Texture2D);
+            GL.BindFramebuffer(FramebufferTarget.Framebuffer, UsePostEffect ? FramebufferID : 0);
             GL.Viewport(0, 0, (int)width, (int)height);
+            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
-            // Object.Render(time, width, height);
+            Object.Render(time, width, height);
+
+            if (!UsePostEffect)
+                return;
 
             Program.Use();
 
@@ -279,25 +316,29 @@ namespace OpenTKMinecraft.Components
             GL.Uniform1(WINDOW_WIDTH, width);
             GL.Uniform1(WINDOW_HEIGHT, height);
             GL.Uniform1(WINDOW_PAUSED, Window.IsPaused ? 1 : 0);
-            GL.ActiveTexture(TextureUnit.Texture0);
-            GL.BindTexture(TextureTarget.ProxyTexture2D, RenderedTexureID);
+
+            GL.ActiveTexture(TextureUnit.Texture1);
+            GL.BindTexture(TextureTarget.Texture2D, RenderedColorTextureID);
+            GL.Uniform1(_coltex, 1);
+
+            GL.ActiveTexture(TextureUnit.Texture2);
+            GL.BindTexture(TextureTarget.Texture2D, RenderedDepthTextureID);
+            GL.Uniform1(_deptex, 2);
+
             GL.BindVertexArray(_vertexarr);
-            // GL.Uniform1(_quadtex, 0);
-            GL.PointSize(100);
-            GL.LineWidth(100);
-            GL.DrawArrays(PrimitiveType.Lines, 0, _vertices.Length);
+            GL.DrawArrays(PrimitiveType.Triangles, 0, _vertices.Length);
         }
 
         private void Win_Resize(object sender, EventArgs e)
         {
-            GL.BindTexture(TextureTarget.Texture2D, RenderedTexureID);
-            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgb, Window.Width, Window.Height, 0, PixelFormat.Rgb, PixelType.UnsignedByte, IntPtr.Zero);
+            GL.BindTexture(TextureTarget.Texture2D, RenderedColorTextureID);
+            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba32f, Window.Width, Window.Height, 0, PixelFormat.Rgba, PixelType.Float, IntPtr.Zero);
 
-            GL.BindRenderbuffer(RenderbufferTarget.Renderbuffer, DepthbufferID);
-            GL.RenderbufferStorage(RenderbufferTarget.Renderbuffer, RenderbufferStorage.DepthComponent, Window.Width, Window.Height);
+            GL.BindTexture(TextureTarget.ProxyTexture2D, RenderedDepthTextureID);
+            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.DepthComponent32f, Window.Width, Window.Height, 0, PixelFormat.DepthComponent, PixelType.Float, IntPtr.Zero);
         }
 
-        public static implicit operator T(AfterEffectShaderProgram<T> fx) => fx.Object;
+        public static implicit operator T(PostEffectShaderProgram<T> fx) => fx.Object;
     }
 
     public enum ShaderProgramType

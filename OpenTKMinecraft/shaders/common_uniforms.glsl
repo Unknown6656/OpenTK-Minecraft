@@ -17,3 +17,5 @@ layout (location = 23) uniform int cam_eye;
     layout (location = 31) uniform mat4 cam_modelview;
     layout (location = 32) uniform mat4 cam_normalview;
 #endif
+
+#include "common.glsl"

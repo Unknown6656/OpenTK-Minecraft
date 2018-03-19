@@ -260,7 +260,8 @@ namespace OpenTKMinecraft
             }
             if (kstate.IsKeyDown(Key.X))
             {
-                _scenefx.UsePostEffect ^= true;
+                _scenefx.Effect++;
+                _scenefx.Effect = (PredefinedShaderEffect)((int)_scenefx.Effect % ((Enum.GetValues(typeof(PredefinedShaderEffect)) as int[]).Max() + 1));
 
                 Thread.Sleep(100);
             }

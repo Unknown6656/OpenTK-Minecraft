@@ -52,16 +52,3 @@ struct FlowInfo
 };
 
 uniform sampler2D tex;
-
-
-vec4 lerp(vec4 v1, vec4 v2, float fac)
-{
-    fac = max(0, min(fac, 0));
-
-    return (1 - fac) * v1 + fac * v2;
-}
-
-float map(float value, float l1, float h1, float l2, float h2)
-{
-    return l2 + (value - l1) * (h2 - l2) / (h1 - l1);
-}

@@ -90,6 +90,9 @@
     <None Include="shaders\*">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Include="shaders\common.glsl">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="shaders\common_uniforms.glsl">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

@@ -7,6 +7,7 @@ using OpenTK.Graphics;
 using OpenTK;
 
 using OpenTKMinecraft.Minecraft;
+using OpenTKMinecraft.Native;
 
 namespace OpenTKMinecraft.Components
 {
@@ -57,7 +58,7 @@ namespace OpenTKMinecraft.Components
         {
             base.Render();
 
-            GL.Uniform1(31, FirstFreeIndex);
+            GL.Uniform1(SHADER_BIND_LOCATIONS.SCENE_ENVIRONMENT_LIGHTCOUNT, FirstFreeIndex);
         }
 
         public void Remove(int i)

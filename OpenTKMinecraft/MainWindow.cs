@@ -58,8 +58,7 @@ namespace OpenTKMinecraft
             _scene = new Scene(this, new ShaderProgram(
                 "Scene Shader",
                 (ShaderProgramType.VertexShader, "shaders/scene_vshader.vert"),
-                (ShaderProgramType.FragmentShader, "shaders/scene_fshader.frag"),
-                (ShaderProgramType.ShaderInclude, "shaders/scene_common.glsl")
+                (ShaderProgramType.FragmentShader, "shaders/scene_fshader.frag")
             ))
             {
                 Camera = new PlayerCamera

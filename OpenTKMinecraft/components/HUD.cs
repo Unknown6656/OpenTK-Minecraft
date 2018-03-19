@@ -8,8 +8,13 @@ using OpenTK.Graphics.OpenGL4;
 using OpenTK.Graphics;
 using OpenTK;
 
+using OpenTKMinecraft.Native;
+
 namespace OpenTKMinecraft.Components
 {
+    using static SHADER_BIND_LOCATIONS;
+
+
     public unsafe sealed class HUD
         : IUpdatable
         , IDisposable
@@ -54,13 +59,13 @@ namespace OpenTKMinecraft.Components
             GL.Viewport(0, 0, Window.Width, Window.Height);
             GL.LineWidth(10);
             GL.PointSize(10);
-            GL.Uniform1(6, Window._paused ? 1 : 0);
-            GL.VertexAttrib1(7, time);
-            GL.Uniform1(8, width);
-            GL.Uniform1(9, height);
-            GL.Uniform3(10, ref campos);
-            GL.Uniform3(11, ref camtarg);
-            GL.UniformMatrix4(20, false, ref projection);
+            GL.Uniform1(WINDOW_TIME, time);
+            GL.Uniform1(WINDOW_WIDTH, width);
+            GL.Uniform1(WINDOW_HEIGHT, height);
+            GL.Uniform1(WINDOW_PAUSED, Window._paused ? 1 : 0);
+            GL.Uniform3(CAMERA_POSITION, ref campos);
+            GL.Uniform3(CAMERA_TARGET, ref camtarg);
+            GL.UniformMatrix4(CAMERA_PROJECTION, false, ref projection);
 
             _crosshair.Render();
         }
@@ -89,20 +94,18 @@ namespace OpenTKMinecraft.Components
             _array = GL.GenVertexArray();
 
             GL.NamedBufferStorage(_buffer, sizeof(HUDVertex) * vertices.Length, vertices, BufferStorageFlags.MapWriteBit);
-
-            GL.VertexArrayAttribBinding(_array, 0, 0);
-            GL.EnableVertexArrayAttrib(_array, 0);
-            GL.VertexArrayAttribFormat(_array, 0, 4, VertexAttribType.Float, false, 0);
-            GL.VertexArrayAttribBinding(_array, 1, 0);
-            GL.EnableVertexArrayAttrib(_array, 1);
-            GL.VertexArrayAttribFormat(_array, 1, 4, VertexAttribType.Float, false, 16);
-            GL.VertexArrayAttribBinding(_array, 2, 0);
-            GL.EnableVertexArrayAttrib(_array, 2);
-            GL.VertexArrayAttribFormat(_array, 2, 2, VertexAttribType.Float, false, 32);
-            GL.VertexArrayAttribBinding(_array, 3, 0);
-            GL.EnableVertexArrayAttrib(_array, 3);
-            GL.VertexArrayAttribFormat(_array, 3, 4, VertexAttribType.Float, false, 48);
-
+            GL.VertexArrayAttribBinding(_array, HUD_VERTEX_POSITION, 0);
+            GL.EnableVertexArrayAttrib(_array, HUD_VERTEX_POSITION);
+            GL.VertexArrayAttribFormat(_array, HUD_VERTEX_POSITION, 4, VertexAttribType.Float, false, 0);
+            GL.VertexArrayAttribBinding(_array, HUD_VERTEX_NORMAL, 0);
+            GL.EnableVertexArrayAttrib(_array, HUD_VERTEX_NORMAL);
+            GL.VertexArrayAttribFormat(_array, HUD_VERTEX_NORMAL, 4, VertexAttribType.Float, false, 16);
+            GL.VertexArrayAttribBinding(_array, HUD_VERTEX_TEXCOORD, 0);
+            GL.EnableVertexArrayAttrib(_array, HUD_VERTEX_TEXCOORD);
+            GL.VertexArrayAttribFormat(_array, HUD_VERTEX_TEXCOORD, 2, VertexAttribType.Float, false, 32);
+            GL.VertexArrayAttribBinding(_array, HUD_VERTEX_COLOR, 0);
+            GL.EnableVertexArrayAttrib(_array, HUD_VERTEX_COLOR);
+            GL.VertexArrayAttribFormat(_array, HUD_VERTEX_COLOR, 4, VertexAttribType.Float, false, 48);
             GL.VertexArrayVertexBuffer(_array, 0, _buffer, IntPtr.Zero, sizeof(HUDVertex));
         }
 
@@ -132,8 +135,8 @@ namespace OpenTKMinecraft.Components
         public Vector4 Position;
         public Vector4 Normal;
         public Vector2 TexCoord;
-        private float __padding__1;
-        private float __padding__2;
+        private readonly float __padding__1;
+        private readonly float __padding__2;
         public Color4 Color;
 
 

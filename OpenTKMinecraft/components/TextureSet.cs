@@ -8,9 +8,13 @@ using OpenTK.Graphics.OpenGL4;
 using OpenTK;
 
 using OpenTKMinecraft.Minecraft;
+using OpenTKMinecraft.Native;
 
 namespace OpenTKMinecraft.Components
 {
+    using static SHADER_BIND_LOCATIONS;
+
+
     public class TexturedVertexSet
         : Renderable
     {
@@ -58,26 +62,21 @@ namespace OpenTKMinecraft.Components
                 throw new NotImplementedException($"The primitive type '{type}' is currently not yet supported by the tangent space calculator.");
 
             GL.NamedBufferStorage(Buffer, sizeof(Vertex) * vertices.Length, vertices, BufferStorageFlags.MapWriteBit);
-            // bind position
-            GL.VertexArrayAttribBinding(VertexArray, 0, 0);
-            GL.EnableVertexArrayAttrib(VertexArray, 0);
-            GL.VertexArrayAttribFormat(VertexArray, 0, 3, VertexAttribType.Float, false, 0);
-            // bind normal
-            GL.VertexArrayAttribBinding(VertexArray, 1, 0);
-            GL.EnableVertexArrayAttrib(VertexArray, 1);
-            GL.VertexArrayAttribFormat(VertexArray, 1, 3, VertexAttribType.Float, false, 12);
-            // bind color
-            GL.VertexArrayAttribBinding(VertexArray, 2, 0);
-            GL.EnableVertexArrayAttrib(VertexArray, 2);
-            GL.VertexArrayAttribFormat(VertexArray, 2, 4, VertexAttribType.Float, false, 24);
-            // bind tangent
-            GL.VertexArrayAttribBinding(VertexArray, 3, 0);
-            GL.EnableVertexArrayAttrib(VertexArray, 3);
-            GL.VertexArrayAttribFormat(VertexArray, 3, 3, VertexAttribType.Float, false, 40);
-            // bind bitangent
-            GL.VertexArrayAttribBinding(VertexArray, 4, 0);
-            GL.EnableVertexArrayAttrib(VertexArray, 4);
-            GL.VertexArrayAttribFormat(VertexArray, 4, 3, VertexAttribType.Float, false, 52);
+            GL.VertexArrayAttribBinding(VertexArray, SCENE_VERTEX_POSITION, 0);
+            GL.EnableVertexArrayAttrib(VertexArray, SCENE_VERTEX_POSITION);
+            GL.VertexArrayAttribFormat(VertexArray, SCENE_VERTEX_POSITION, 3, VertexAttribType.Float, false, 0);
+            GL.VertexArrayAttribBinding(VertexArray, SCENE_VERTEX_NORMAL, 0);
+            GL.EnableVertexArrayAttrib(VertexArray, SCENE_VERTEX_NORMAL);
+            GL.VertexArrayAttribFormat(VertexArray, SCENE_VERTEX_NORMAL, 3, VertexAttribType.Float, false, 12);
+            GL.VertexArrayAttribBinding(VertexArray, SCENE_VERTEX_COLOR, 0);
+            GL.EnableVertexArrayAttrib(VertexArray, SCENE_VERTEX_COLOR);
+            GL.VertexArrayAttribFormat(VertexArray, SCENE_VERTEX_COLOR, 4, VertexAttribType.Float, false, 24);
+            GL.VertexArrayAttribBinding(VertexArray, SCENE_VERTEX_TANGENT, 0);
+            GL.EnableVertexArrayAttrib(VertexArray, SCENE_VERTEX_TANGENT);
+            GL.VertexArrayAttribFormat(VertexArray, SCENE_VERTEX_TANGENT, 3, VertexAttribType.Float, false, 40);
+            GL.VertexArrayAttribBinding(VertexArray, SCENE_VERTEX_BITANGENT, 0);
+            GL.EnableVertexArrayAttrib(VertexArray, SCENE_VERTEX_BITANGENT);
+            GL.VertexArrayAttribFormat(VertexArray, SCENE_VERTEX_BITANGENT, 3, VertexAttribType.Float, false, 52);
             GL.VertexArrayVertexBuffer(VertexArray, 0, Buffer, IntPtr.Zero, sizeof(Vertex));
 
             PrimitiveType = type;
@@ -188,7 +187,7 @@ namespace OpenTKMinecraft.Components
 
         public override void Bind()
         {
-            GL.Uniform1(5, _size);
+            GL.Uniform1(SCENE_VERTEX_TEXTURESIZE, _size);
             GL.BindTexture(TextureTarget.Texture2D, TextureID);
             GL.ActiveTexture(TextureUnit.Texture0);
         }

@@ -15,6 +15,9 @@ using OpenTKMinecraft.Native;
 
 namespace OpenTKMinecraft.Components
 {
+    using static SHADER_BIND_LOCATIONS;
+
+
     public sealed class Scene
         : Renderable
         , IShaderTarget
@@ -62,14 +65,13 @@ namespace OpenTKMinecraft.Components
             GL.PointSize(0f);
             // GL.PatchParameter(PatchParameterInt.PatchVertices, 4);
 
-            GL.Uniform1(6, Window._paused ? 1 : 0);
-            GL.VertexAttrib1(7, time);
-            GL.Uniform1(8, width);
-            GL.Uniform1(9, height);
-            GL.Uniform3(10, ref campos);
-            GL.Uniform3(11, ref camtarg);
-            GL.Uniform1(12, Camera.FocalDistance);
-            GL.Uniform1(30, Math.Max(0, Math.Min(Brightness, 1)));
+            GL.VertexAttrib1(WINDOW_TIME, time);
+            GL.Uniform1(WINDOW_WIDTH, width);
+            GL.Uniform1(WINDOW_HEIGHT, height);
+            GL.Uniform3(CAMERA_POSITION, ref campos);
+            GL.Uniform3(CAMERA_TARGET, ref camtarg);
+            GL.Uniform1(CAMERA_FOCALDISTANCE, Camera.FocalDistance);
+            GL.Uniform1(SCENE_ENVIRONMENT_AMBIENTBRIGHTNESS, Math.Max(0, Math.Min(Brightness, 1)));
 
             Lights.Render();
 

@@ -1,4 +1,9 @@
-﻿# Shader Bindinigs
+﻿# THIS DOCUMENT IS NOW OBSOLETE
+
+---------------
+
+
+# Shader Bindinigs
 _This is an internal documentation document_
 
 ## `scene_xshader.xxxx`

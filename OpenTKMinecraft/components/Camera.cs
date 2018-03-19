@@ -3,9 +3,12 @@
 using OpenTK.Graphics.OpenGL4;
 using OpenTK;
 
+using OpenTKMinecraft.Native;
+
 namespace OpenTKMinecraft.Components
 {
     using static System.Math;
+    using static SHADER_BIND_LOCATIONS;
 
 
     public interface IMovableCamera
@@ -67,10 +70,10 @@ namespace OpenTKMinecraft.Components
             Matrix4 _projection = (data?.Projection ?? Projection) * Perspective;
             Matrix4 _mnormal = Matrix4.Transpose(Matrix4.Invert(_mview));
 
-            GL.UniformMatrix4(20, false, ref _projection);
-            GL.UniformMatrix4(21, false, ref _mview);
-            GL.UniformMatrix4(22, false, ref _mnormal);
-            GL.Uniform1(23, (int)(data?.StereoMode ?? CameraStereoMode.Normal));
+            GL.UniformMatrix4(CAMERA_PROJECTION, false, ref _projection);
+            GL.UniformMatrix4(CAMERA_MODELVIEW, false, ref _mview);
+            GL.UniformMatrix4(CAMERA_MODELNORMALS, false, ref _mnormal);
+            GL.Uniform1(CAMERA_EYETYPE, (int)(data?.StereoMode ?? CameraStereoMode.Normal));
 
             obj.Model.Render();
         }

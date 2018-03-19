@@ -34,6 +34,8 @@ namespace OpenTKMinecraft.Native
         public const int HUD_VERTEX_NORMAL = 2;
         public const int HUD_VERTEX_COLOR = 3;
         public const int HUD_VERTEX_TEXCOORD = 4;
+
+        public const int AFTEREFFECT_VERTEX_POSITION = 1;
     }
 
     public static unsafe class OpenGL32

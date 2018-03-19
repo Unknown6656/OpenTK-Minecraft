@@ -7,8 +7,13 @@ using System;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK;
 
+using OpenTKMinecraft.Native;
+
 namespace OpenTKMinecraft.Components
 {
+    using static SHADER_BIND_LOCATIONS;
+
+
     public interface IShaderTarget
     {
         ShaderProgram Program { get; }
@@ -21,6 +26,7 @@ namespace OpenTKMinecraft.Components
         : IDisposable
     {
         public static Dictionary<int, ShaderProgram> KnownPrograms { get; }
+        public string[] CompiletimeConstants { get; }
         public string Name { get; }
         public int ID { get; }
 
@@ -40,11 +46,12 @@ namespace OpenTKMinecraft.Components
 
         static ShaderProgram() => KnownPrograms = new Dictionary<int, ShaderProgram>();
 
-        public ShaderProgram(string name, params (ShaderProgramType, string)[] shaders)
+        public ShaderProgram(string name, string[] constants, params (ShaderProgramType, string)[] shaders)
         {
             Name = name;
             _shaders = shaders;
             _includes = new Dictionary<string, int>();
+            CompiletimeConstants = (constants ?? new string[0]).Select(s => s.ToUpper()).ToArray();
             ID = CreateProgram();
 
             KnownPrograms.Add(ID, this);
@@ -85,8 +92,13 @@ namespace OpenTKMinecraft.Components
                     string condition = m.Groups["condition"].ToString().Trim();
                     string content = m.Groups["code"].ToString();
                     bool cond_met = false;
+                    bool inv = condition.StartsWith("!");
 
-                    cond_met |= condition.ToUpper() == shadertpstr;
+                    if (inv)
+                        condition = condition.Substring(1);
+
+                    cond_met |= (condition.ToUpper() == shadertpstr) ^ inv;
+                    cond_met |= CompiletimeConstants.Contains(condition.ToUpper()) ^ inv;
                     // todo : more expressions ?
 
                     return cond_met ? '\n' + content + '\n' : "";
@@ -155,11 +167,23 @@ namespace OpenTKMinecraft.Components
         }
     }
 
-    public sealed class AfterEffectShaderProgram<T>
+    public unsafe sealed class AfterEffectShaderProgram<T>
         : IShaderTarget
         , IDisposable
         where T : class, IShaderTarget
     {
+        private static readonly Vector4[] _vertices = new[]
+        {
+            new Vector4(-1, -1, 0, 1),
+            new Vector4(1, -1, 0, 1),
+            new Vector4(-1, 1, 0, 1),
+            new Vector4(-1, 1, 0, 1),
+            new Vector4(1, -1, 0, 1),
+            new Vector4(1, 1, 0, 1),
+        };
+        private readonly int _vertexarr, _vertexbuff, _quadtex;
+        private bool disposed;
+
         public ShaderProgram Program { get; }
         public int TargetTextureID { get; }
         public MainWindow Window { get; }
@@ -195,8 +219,18 @@ namespace OpenTKMinecraft.Components
             ErrorCode err0 = GL.GetError();
             FramebufferErrorCode err1 = GL.CheckFramebufferStatus(FramebufferTarget.Framebuffer);
 
-            if ((err0 != ErrorCode.NoError) || (err1 != FramebufferErrorCode.FramebufferComplete))
+            if (err1 != FramebufferErrorCode.FramebufferComplete)
                 throw new Exception($"The framebuffer initialization failed as follows:  {err0} : {err1}");
+
+            _vertexarr = GL.GenVertexArray();
+            _vertexbuff = GL.GenBuffer();
+            _quadtex = GL.GetUniformLocation(Program.ID, "tex");
+
+            GL.NamedBufferStorage(_vertexbuff, sizeof(Vector4) * _vertices.Length, _vertices, BufferStorageFlags.MapWriteBit);
+            GL.VertexArrayAttribBinding(_vertexarr, AFTEREFFECT_VERTEX_POSITION, 0);
+            GL.EnableVertexArrayAttrib(_vertexarr, AFTEREFFECT_VERTEX_POSITION);
+            GL.VertexArrayAttribFormat(_vertexarr, AFTEREFFECT_VERTEX_POSITION, 4, VertexAttribType.Float, false, 0);
+            GL.VertexArrayVertexBuffer(_vertexarr, 0, _vertexbuff, IntPtr.Zero, sizeof(Vector4));
 
             Window.Resize += Win_Resize;
         }
@@ -205,8 +239,15 @@ namespace OpenTKMinecraft.Components
 
         public void Dispose()
         {
+            if (disposed)
+                return;
+            else
+                disposed = true;
+
             Window.Resize -= Win_Resize;
 
+            GL.DeleteBuffer(_vertexbuff);
+            GL.DeleteVertexArray(_vertexarr);
             GL.DeleteTexture(TargetTextureID);
             GL.DeleteFramebuffer(FramebufferID);
             GL.DeleteRenderbuffer(DepthbufferID);
@@ -218,13 +259,19 @@ namespace OpenTKMinecraft.Components
             GL.Viewport(0, 0, (int)width, (int)height);
 
             Object.Render(time, width, height);
+            Program.Use();
 
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
-
-            // todo : render to screen
-
-            // GL.Uniform1(6, Window._paused ? 1 : 0);
-
+            GL.Viewport(0, 0, (int)width, (int)height);
+            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+            GL.VertexAttrib1(WINDOW_TIME, time);
+            GL.Uniform1(WINDOW_WIDTH, width);
+            GL.Uniform1(WINDOW_HEIGHT, height);
+            GL.Uniform1(WINDOW_PAUSED, Window._paused ? 1 : 0);
+            GL.BindTexture(TextureTarget.ProxyTexture2D, TargetTextureID);
+            GL.ActiveTexture(TextureUnit.Texture0);
+            // GL.Uniform1(_quadtex, 0);
+            GL.DrawArrays(PrimitiveType.Triangles, 0, _vertices.Length);
         }
 
         private void Win_Resize(object sender, EventArgs e)

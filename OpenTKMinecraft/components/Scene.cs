@@ -54,6 +54,12 @@ namespace OpenTKMinecraft.Components
 
         public void Render(double time, float width, float height)
         {
+            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit | ClearBufferMask.StencilBufferBit | ClearBufferMask.AccumBufferBit);
+            GL.Enable(EnableCap.Texture2D);
+            GL.Enable(EnableCap.DepthTest);
+            GL.Enable(EnableCap.CullFace);
+            GL.CullFace(CullFaceMode.Back);
+
             Program.Use();
 
             Vector3 campos = Camera.Position;

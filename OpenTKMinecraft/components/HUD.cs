@@ -49,6 +49,8 @@ namespace OpenTKMinecraft.Components
 
         public void Render(double time, float width, float height)
         {
+            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+
             Program.Use();
 
             PlayerCamera cam = Window.Camera;

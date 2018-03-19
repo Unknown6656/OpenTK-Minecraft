@@ -98,6 +98,8 @@ namespace OpenTKMinecraft.Components
                 });
                 OpenGL32.glAccum(AccumulationOperation.Load, 1);
 
+                GL.Clear(ClearBufferMask.DepthBufferBit);
+
                 // right eye
                 World.Render(Camera, new CameraRenderData
                 {

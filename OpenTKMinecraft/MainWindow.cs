@@ -35,6 +35,7 @@ namespace OpenTKMinecraft
 
         private PostEffectShaderProgram<Scene> _scenefx;
         private int _mousex, _mousey;
+        private float _mousescroll;
 
         public HUD HUD { private set; get; }
         public Scene Scene => _scenefx;
@@ -155,7 +156,12 @@ namespace OpenTKMinecraft
             base.Exit();
         }
 
-        protected override void OnResize(EventArgs e) => GL.Viewport(0, 0, Width, Height);
+        protected override void OnResize(EventArgs e)
+        {
+            GL.Viewport(0, 0, Width, Height);
+
+            _scenefx.Win_Resize(this, e);
+        }
 
         protected override void OnUpdateFrame(FrameEventArgs e)
         {
@@ -188,6 +194,7 @@ namespace OpenTKMinecraft
             MouseState mstate = Mouse.GetState();
             int δx = _mousex - mstate.X;
             int δy = _mousey - mstate.Y;
+            float δs = _mousescroll - mstate.WheelPrecise;
             float speed = .1f;
 
             if (kstate.IsKeyDown(Key.P))
@@ -200,6 +207,7 @@ namespace OpenTKMinecraft
                 {
                     _mousex = mstate.X;
                     _mousey = mstate.Y;
+                    _mousescroll = mstate.WheelPrecise;
                 }
 
                 return;
@@ -259,6 +267,8 @@ namespace OpenTKMinecraft
 
             if (Camera.IsStereoscopic)
             {
+                Camera.FocalDistance *= (float)Pow(1.3, δs);
+
                 if (kstate.IsKeyDown(Key.PageUp))
                     Camera.FocalDistance *= 1.1f;
                 if (kstate.IsKeyDown(Key.PageDown))
@@ -276,6 +286,7 @@ namespace OpenTKMinecraft
 
             _mousex = mstate.X;
             _mousey = mstate.Y;
+            _mousescroll = mstate.WheelPrecise;
 
             System.Windows.Forms.Cursor.Position = new Point(X + (Width / 2), Y + (Height / 2));
         }

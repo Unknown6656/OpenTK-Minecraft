@@ -201,7 +201,7 @@ namespace OpenTKMinecraft.Components
             new Vector4(1, 1, 0, 1),
         };
         private readonly int _vertexarr, _vertexbuff, _coltex, _deptex;
-        private bool disposed;
+        private bool _disposed;
 
         public bool UsePostEffect { set; get; } = true;
         public int RenderedColorTextureID { get; }
@@ -266,8 +266,6 @@ namespace OpenTKMinecraft.Components
 
             _coltex = GL.GetUniformLocation(Program.ID, "renderedColor");
             _deptex = GL.GetUniformLocation(Program.ID, "renderedDepth");
-
-            Window.Resize += Win_Resize;
         }
 
         ~PostEffectShaderProgram() => Dispose();
@@ -276,12 +274,10 @@ namespace OpenTKMinecraft.Components
         {
             lock (_vertices)
             {
-                if (disposed)
+                if (_disposed)
                     return;
                 else
-                    disposed = true;
-
-                Window.Resize -= Win_Resize;
+                    _disposed = true;
 
                 Program.Use();
 
@@ -329,8 +325,11 @@ namespace OpenTKMinecraft.Components
             GL.DrawArrays(PrimitiveType.Triangles, 0, _vertices.Length);
         }
 
-        private void Win_Resize(object sender, EventArgs e)
+        internal void Win_Resize(object sender, EventArgs e)
         {
+            if ((Window.Width < 10) || (Window.Height < 10))
+                return;
+
             GL.BindTexture(TextureTarget.Texture2D, RenderedColorTextureID);
             GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba32f, Window.Width, Window.Height, 0, PixelFormat.Rgba, PixelType.Float, IntPtr.Zero);
 

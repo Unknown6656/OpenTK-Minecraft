@@ -49,8 +49,6 @@ namespace OpenTKMinecraft.Components
 
         public void Render(double time, float width, float height)
         {
-            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-
             Program.Use();
 
             PlayerCamera cam = Window.Camera;
@@ -64,7 +62,7 @@ namespace OpenTKMinecraft.Components
             GL.VertexAttrib1(WINDOW_TIME, time);
             GL.Uniform1(WINDOW_WIDTH, width);
             GL.Uniform1(WINDOW_HEIGHT, height);
-            GL.Uniform1(WINDOW_PAUSED, Window._paused ? 1 : 0);
+            GL.Uniform1(WINDOW_PAUSED, Window.IsPaused ? 1 : 0);
             GL.Uniform3(CAMERA_POSITION, ref campos);
             GL.Uniform3(CAMERA_TARGET, ref camtarg);
             GL.UniformMatrix4(CAMERA_PROJECTION, false, ref projection);

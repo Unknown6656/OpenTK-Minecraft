@@ -16,7 +16,7 @@ out mat3 vs_TBN;
 void main(void)
 {
     gl_Position = cam_projection * cam_modelview * vec4(position, 1);
-
+    
     vs_normal = normalize((cam_normalview * vec4(normal, 0)).xyz);
     vs_tangent = normalize((cam_normalview * vec4(tangent, 0)).xyz);
     vs_bitangent = normalize((cam_normalview * vec4(bitangent, 0)).xyz);

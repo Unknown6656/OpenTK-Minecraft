@@ -54,11 +54,13 @@ namespace OpenTKMinecraft.Components
 
         public void Render(double time, float width, float height)
         {
-            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit | ClearBufferMask.StencilBufferBit | ClearBufferMask.AccumBufferBit);
             GL.Enable(EnableCap.Texture2D);
             GL.Enable(EnableCap.DepthTest);
             GL.Enable(EnableCap.CullFace);
             GL.CullFace(CullFaceMode.Back);
+
+            if (Camera.IsStereoscopic)
+                GL.Clear(ClearBufferMask.AccumBufferBit);
 
             Program.Use();
 
@@ -67,8 +69,8 @@ namespace OpenTKMinecraft.Components
 
             Bind();
 
-            GL.LineWidth(0f);
-            GL.PointSize(0f);
+            GL.LineWidth(1f);
+            GL.PointSize(1f);
             // GL.PatchParameter(PatchParameterInt.PatchVertices, 4);
 
             GL.VertexAttrib1(WINDOW_TIME, time);

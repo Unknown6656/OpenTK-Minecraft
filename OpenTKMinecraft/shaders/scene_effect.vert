@@ -3,8 +3,6 @@
 
 layout (location = 1) in vec4 position;
 
-uniform sampler2D tex;
-
 out float vs_time;
 out vec2 uv;
 

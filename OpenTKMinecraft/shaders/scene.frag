@@ -13,7 +13,7 @@ in vec4 vs_color;
 in vec3 vs_eyedir;
 in mat3 vs_TBN;
 
-out vec4 color;
+layout (location = 0) out vec4 color;
 
 
 vec4 _texture(int type, vec2 uv, int mode)

@@ -188,8 +188,8 @@ namespace OpenTKMinecraft.Components
         public override void Bind()
         {
             GL.Uniform1(SCENE_VERTEX_TEXTURESIZE, _size);
-            GL.BindTexture(TextureTarget.Texture2D, TextureID);
             GL.ActiveTexture(TextureUnit.Texture0);
+            GL.BindTexture(TextureTarget.Texture2D, TextureID);
         }
 
         [HandleProcessCorruptedStateExceptions]

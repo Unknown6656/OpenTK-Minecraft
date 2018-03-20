@@ -9,9 +9,14 @@ float atan2(in float y, in float x)
     return mix(PI / 2.0 - atan(x, y), atan(y, x), s);
 }
 
+float clamp(float value, float min, float max)
+{
+    return value < min ? min : value > max ? max : value;
+}
+
 vec4 lerp(vec4 v1, vec4 v2, float fac)
 {
-    fac = max(0, min(fac, 0));
+    fac = clamp(fac, 0, 1);
 
     return (1 - fac) * v1 + fac * v2;
 }
@@ -31,9 +36,4 @@ vec3 grayscale(vec3 col)
 vec4 grayscale(vec4 col)
 {
     return vec4(grayscale(col.rgb), col.a);
-}
-
-float clamp(float value, float min, float max)
-{
-    return value < min ? min : value > max ? max : value;
 }

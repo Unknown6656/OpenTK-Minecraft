@@ -319,6 +319,7 @@ namespace OpenTKMinecraft.Components
             GL.Uniform1(_edeptex, 3);
 
             GL.BindVertexArray(_vertexarr);
+            //GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Fill);
             GL.DrawArrays(PrimitiveType.Triangles, 0, _vertices.Length);
         }
 
@@ -408,5 +409,6 @@ namespace OpenTKMinecraft.Components
         None = 0,
         Edge = 1,
         Wobbles = 2,
+        Depth = 3,
     }
 }

@@ -6,6 +6,7 @@ using System.IO;
 using System;
 
 using OpenTK.Graphics.OpenGL4;
+using System.Text.RegularExpressions;
 
 namespace OpenTKMinecraft
 {
@@ -34,9 +35,24 @@ namespace OpenTKMinecraft
                 {
                     Width = 1280,
                     Height = 720,
-                    Title = $"Test renderer [OpenGL v.{GL.GetString(StringName.Version)}]"
+                    Title = "OpenTK Minecraft"
                 })
-                    win.Run(120);
+                {
+                    string glverstr = GL.GetString(StringName.Version);
+
+                    glverstr = Regex.Replace(glverstr, @"^(?<vers>[0-9\.]+)\s*.*$", m => m.Groups["vers"].ToString());
+
+                    Version glvers = Version.Parse(glverstr);
+
+                    if ((glvers.Major < GL_VERSION_MAJ) || ((glvers.Major == GL_VERSION_MAJ) && (glvers.Minor < GL_VERSION_MIN)))
+                    {
+                        Console.WriteLine($"This application requires at least OpenGL v.{GL_VERSION_MAJ}.{GL_VERSION_MIN} - however, only version {glvers} could be found on this machine.");
+
+                        ret = -1;
+                    }
+                    else
+                        win.Run(200);
+                }
             }
             catch (Exception ex)
             {

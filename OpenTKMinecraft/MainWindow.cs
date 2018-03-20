@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Windows.Forms;
 using System.Threading;
 using System.Drawing;
 using System.Linq;
@@ -21,6 +22,8 @@ namespace OpenTKMinecraft
     public sealed unsafe class MainWindow
         : GameWindow
     {
+        internal const int KEYBOARD_TOGGLE_DELAY = 100;
+
         public World World => Scene.Object.World;
         public PlayerCamera Camera => Scene.Object.Camera as PlayerCamera;
         public PostEffectShaderProgram<Scene> Scene { private set; get; }
@@ -88,6 +91,8 @@ namespace OpenTKMinecraft
             CursorVisible = false;
             VSync = VSyncMode.Off;
             WindowState = WindowState.Maximized;
+
+            ShowHelp();
         }
 
         internal void BuildScene()
@@ -194,11 +199,18 @@ namespace OpenTKMinecraft
             float δs = _mousescroll - mstate.WheelPrecise;
             float speed = .1f;
 
+            if (kstate.IsKeyDown(Key.H))
+            {
+                ShowHelp();
+
+                return;
+            }
+
             if (kstate.IsKeyDown(Key.P))
             {
                 CursorVisible = (IsPaused = !IsPaused);
 
-                Thread.Sleep(100);
+                Thread.Sleep(KEYBOARD_TOGGLE_DELAY);
 
                 if (!IsPaused)
                 {
@@ -245,22 +257,30 @@ namespace OpenTKMinecraft
                 ResetCamera();
             if (kstate.IsKeyDown(Key.Number4))
             {
-                Camera.IsStereoscopic ^= true;
+                if (Camera.IsStereoscopic ^= true)
+                    Scene.UsePostEffect = false;
 
-                Thread.Sleep(100);
+                Thread.Sleep(KEYBOARD_TOGGLE_DELAY);
+            }
+            if (kstate.IsKeyDown(Key.Number5))
+            {
+                if (Scene.UsePostEffect ^= true)
+                    Camera.IsStereoscopic = false;
+
+                Thread.Sleep(KEYBOARD_TOGGLE_DELAY);
             }
             if (kstate.IsKeyDown(Key.V))
             {
                 VSync = VSync == VSyncMode.Off ? VSyncMode.On : VSyncMode.Off;
 
-                Thread.Sleep(100);
+                Thread.Sleep(KEYBOARD_TOGGLE_DELAY);
             }
             if (kstate.IsKeyDown(Key.X))
             {
                 Scene.Effect++;
                 Scene.Effect = (PredefinedShaderEffect)((int)Scene.Effect % ((Enum.GetValues(typeof(PredefinedShaderEffect)) as int[]).Max() + 1));
 
-                Thread.Sleep(100);
+                Thread.Sleep(KEYBOARD_TOGGLE_DELAY);
             }
 
             if (Camera.IsStereoscopic)
@@ -288,5 +308,36 @@ namespace OpenTKMinecraft
 
             System.Windows.Forms.Cursor.Position = new Point(X + (Width / 2), Y + (Height / 2));
         }
+
+        public static void ShowHelp() => MessageBox.Show(@"
+---------------- KEYBOARD SHORTCUTS ----------------
+[P] Pause
+[ESC] Exit
+[H] Show this help window
+
+[W] Move forwards
+[A] Move left
+[D] Move right
+[S] Move backwards
+[SPACE] Move up
+[CTRL] Move down
+[ALT] Fast movement
+[SHIFT] Slow movement
+[Q] Zoom out
+[E] Zoom in
+
+[1] Display Points
+[2] Display Lines
+[3] Display Faces
+[4] Toggle Stereoscopic display
+[5] Toggle PostProcessing effects
+[P.Up] Increase focal distance (Stereoscopic only)
+[P.Down] Decrease focal distance (Stereoscopic only)
+[Home] Increase eye separation (Stereoscopic only)
+[End] Derease eye separation (Stereoscopic only)
+
+[X] Cycle visual effects
+[V] Toggle VSync
+".Trim());
     }
 }

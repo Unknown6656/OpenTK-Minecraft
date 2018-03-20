@@ -16,6 +16,8 @@ namespace OpenTKMinecraft
         public const int GL_VERSION_MIN = 6;
         public const string TEMP_DIR = ".tmp";
 
+        public static readonly Spashscreen spscreen = new Spashscreen();
+
         [STAThread]
         [HandleProcessCorruptedStateExceptions]
         public static int Main(string[] args)
@@ -31,6 +33,9 @@ namespace OpenTKMinecraft
 
             try
             {
+                spscreen.Show();
+                spscreen.Text = ("Initializing ...", "");
+
                 using (MainWindow win = new MainWindow(args)
                 {
                     Width = 1280,
@@ -47,6 +52,8 @@ namespace OpenTKMinecraft
                     if ((glvers.Major < GL_VERSION_MAJ) || ((glvers.Major == GL_VERSION_MAJ) && (glvers.Minor < GL_VERSION_MIN)))
                     {
                         Console.WriteLine($"This application requires at least OpenGL v.{GL_VERSION_MAJ}.{GL_VERSION_MIN} - however, only version {glvers} could be found on this machine.");
+
+                        spscreen.Text = ("Failed.", $"OpenGL v.{GL_VERSION_MAJ}.{GL_VERSION_MIN} is at least required.");
 
                         ret = -1;
                     }
@@ -78,6 +85,9 @@ namespace OpenTKMinecraft
                 Console.WriteLine("Press any key to exit ...");
                 Console.ReadKey(true);
             }
+
+            spscreen.Close();
+            spscreen.Dispose();
 
             return ret;
         }

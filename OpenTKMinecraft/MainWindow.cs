@@ -45,10 +45,13 @@ namespace OpenTKMinecraft
             Arguments = args;
             MouseSensitivityFactor = 2;
             WindowBorder = WindowBorder.Resizable;
+            WindowState = WindowState.Normal;
         }
 
         protected override void OnLoad(EventArgs e)
         {
+            Program.spscreen.Text = ("Loading Shaders ...", "");
+
             Closed += (s, a) => Exit();
 
             Scene = new PostEffectShaderProgram<Scene>(
@@ -92,11 +95,17 @@ namespace OpenTKMinecraft
             VSync = VSyncMode.Off;
             WindowState = WindowState.Maximized;
 
+            Program.spscreen.Text = ("Finished.", "");
+            Thread.Sleep(500);
+            Program.spscreen.Close();
+
             ShowHelp();
         }
 
         internal void BuildScene()
         {
+            Program.spscreen.Text = ("Loading World ...", "Building scene ...");
+
             World[0, 15, 0].Material = BlockMaterial.__DEBUG__;
 
             for (int i = 0; i < 4; ++i)
@@ -182,8 +191,6 @@ namespace OpenTKMinecraft
 
         protected override void OnRenderFrame(FrameEventArgs e)
         {
-            Title = $"{1 / e.Time:F2} FPS";
-
             Scene.Render(Time, Width, Height);
             HUD.Render(Time, Width, Height);
 

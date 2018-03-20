@@ -1,6 +1,7 @@
 ﻿#version 460 core
 #include "common_uniforms.glsl"
 
+layout (location = 38) uniform int EdgeBlurMode;
 layout (location = 39) uniform int PredefinedEffect;
 
 uniform sampler2D renderedColor;
@@ -23,6 +24,10 @@ out vec4 color;
 #define FX_WOBB 2
 #define FX_DEPTH 3
 
+// compare to  OpenTKMinecraft::Components::EdgeBlurMode
+#define EDGE_NONE 0
+#define EDGE_BOX 1
+#define EDGE_RADIAL 2
 
 vec4 convolute(vec2 coord, mat3 H, mat3 V, int mode, bool gray)
 {
@@ -88,25 +93,35 @@ void main(void)
 
     float dist = clamp(length(vs_pos * vec2(vs_aspectratio, 1)), 0, 1);
     float fog = clamp(pow(dist / 1.1, 2) + 0.2 - texture(renderedDepth, uv).r, 0, 1);
-
-
-
-
-
-    vec2 tcoord = uv - 0.5;
     vec4 sum = vec4(0);
 
-    for (int i = 0; i < 12; ++i)
+    if (EdgeBlurMode == EDGE_BOX)
     {
-        float sc = 1 - 0.1 * (i / 11.0);
+        int side = 3;
 
-        sum += getcolor(tcoord * sc + 0.5, PredefinedEffect);
+        for (int i = -side; i <= side; ++i)
+            for (int j = -side; j <= side; ++j)
+                sum += getcolor(uv + 2 * vec2(i / window_width, j / window_height), PredefinedEffect);
+
+        sum /= pow(2 * side + 1, 2);
     }
-
-    sum /= 12;
+    else if (EdgeBlurMode == EDGE_RADIAL)
+    {
+        vec2 tcoord = uv - 0.5;
+        
+        for (int i = 0; i < 12; ++i)
+        {
+            float sc = 1 - 0.1 * (i / 11.0);
+        
+            sum += getcolor(tcoord * sc + 0.5, PredefinedEffect);
+        }
+        
+        sum /= 12;
+    }
+    else
+        fog = 0;
+    
     color = (sum * fog) + (getcolor(uv, PredefinedEffect) * (1 - fog));
-
-
 
     if (paused)
         color = grayscale(color);

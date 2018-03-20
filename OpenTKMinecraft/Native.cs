@@ -35,6 +35,7 @@ namespace OpenTKMinecraft.Native
         public const int HUD_VERTEX_TEXCOORD = 4;
 
         public const int POSTRENDER_VERTEX_POSITION = 1;
+        public const int POSTRENDER_EDGEBLUR = 38;
         public const int POSTRENDER_EFFECT = 39;
     }
 

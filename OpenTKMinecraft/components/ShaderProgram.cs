@@ -53,6 +53,8 @@ namespace OpenTKMinecraft.Components
 
         public ShaderProgram(string name, string[] constants, params (ShaderProgramType, string)[] shaders)
         {
+            Program.spscreen.Subtitle = $"Compiling shader set '{name}' ...";
+
             Name = name;
             _shaders = shaders;
             _includes = new Dictionary<string, int>();
@@ -66,6 +68,8 @@ namespace OpenTKMinecraft.Components
 
         private int CompileShader(ShaderProgramType type, string path)
         {
+            Program.spscreen.Subtitle = $"Compiling shader set '{Name}' ...\r\n{path} ({type})";
+
             Regex reg_include = new Regex(@"\#include\s*\""\s*(?<name>[^\r\n]+)\s*\""\s*(\r|\n)+", RegexOptions.Compiled | RegexOptions.IgnoreCase);
             Regex reg_if = new Regex(@"\#if\s+(?<condition>[^\r\n\#]+)(\r|\n)+(?<code>[^\#]+)(\r|\n)+\#endif\s*(\r|\n)+", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline);
             int ptr = GL.CreateShader((ShaderType)type);
@@ -209,6 +213,7 @@ namespace OpenTKMinecraft.Components
         private bool _disposed;
 
         public bool UsePostEffect { set; get; } = true;
+        public EdgeBlurMode EdgeBlurMode { set; get; } = EdgeBlurMode.BoxBlur;
         public PredefinedShaderEffect Effect { set; get; }
         public int RenderedEffectiveDepthTextureID { get; private set; }
         public int RenderedDepthTextureID { get; private set; }
@@ -305,6 +310,7 @@ namespace OpenTKMinecraft.Components
             GL.Uniform1(WINDOW_HEIGHT, height);
             GL.Uniform1(WINDOW_PAUSED, Window.IsPaused ? 1 : 0);
             GL.Uniform1(POSTRENDER_EFFECT, (int)Effect);
+            GL.Uniform1(POSTRENDER_EDGEBLUR, (int)EdgeBlurMode);
 
             GL.ActiveTexture(TextureUnit.Texture1);
             GL.BindTexture(TextureTarget.Texture2D, RenderedColorTextureID);
@@ -410,5 +416,12 @@ namespace OpenTKMinecraft.Components
         Edge = 1,
         Wobbles = 2,
         Depth = 3,
+    }
+
+    public enum EdgeBlurMode
+    {
+        None = 0,
+        BoxBlur = 1,
+        RadialBlur = 2
     }
 }

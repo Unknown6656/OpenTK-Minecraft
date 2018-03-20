@@ -32,3 +32,8 @@ vec4 grayscale(vec4 col)
 {
     return vec4(grayscale(col.rgb), col.a);
 }
+
+float clamp(float value, float min, float max)
+{
+    return value < min ? min : value > max ? max : value;
+}

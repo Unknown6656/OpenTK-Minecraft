@@ -4,7 +4,7 @@
 
 in float vs_time;
 in vec2 vs_texcoord;
-in vec3 vs_worldpos;
+in vec4 vs_worldpos;
 in vec3 vs_position;
 in vec3 vs_bitangent;
 in vec3 vs_tangent;
@@ -14,6 +14,7 @@ in vec3 vs_eyedir;
 in mat3 vs_TBN;
 
 layout (location = 0) out vec4 color;
+layout (location = 1) out vec4 depth;
 
 
 vec4 _texture(int type, vec2 uv, int mode)
@@ -140,13 +141,13 @@ void main(void)
     for (int i = 0, maxl = min(light_count, MAX_LIGHTS); i < maxl; ++i)
     {
         Light _light = SceneLights.lights[i];
-        vec3 light_color = getrawlightcolor(vs_worldpos, _light);
+        vec3 light_color = getrawlightcolor(vs_worldpos.xyz, _light);
 
         if (_light.Mode == LIGHT_AMBIENT)
             outcolor += vec4(ambient.rgb * light_color * diffuse.rgb, diffuse.a);
         else
         {
-            vec3 L = vs_TBN * getlightdir(vs_worldpos, _light);
+            vec3 L = vs_TBN * getlightdir(vs_worldpos.xyz, _light);
             vec3 R = reflect(L, N);
             float LN = max(0, dot(L, N));
             float RV = max(0, dot(R, V));
@@ -164,7 +165,10 @@ void main(void)
             outcolor += vec4(contribution * diffuse.a, 0);
         }
     }
+
+    vec3 distv = vs_worldpos.xyz / vs_worldpos.w - cam_position;
     
+    depth = vec4(3 / length(distv));
     color = vec4(outcolor.xyz * (1 - glow.a) + outcolor.xyz * glow.a, outcolor.a + glow.a);
 
     if (cam_eye == CAM_LEFT)

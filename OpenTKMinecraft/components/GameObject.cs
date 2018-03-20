@@ -10,6 +10,11 @@ namespace OpenTKMinecraft.Components
         void Update(double time, double delta);
     }
 
+    public interface IVisuallyUpdatable
+    {
+        void Update(double time, double delta, float aspectratio);
+    }
+
     public interface IRenderable
     {
         void Render(Camera camera, CameraRenderData data);

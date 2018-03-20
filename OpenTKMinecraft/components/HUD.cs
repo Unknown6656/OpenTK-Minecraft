@@ -16,7 +16,8 @@ namespace OpenTKMinecraft.Components
 
 
     public unsafe sealed class HUD
-        : IUpdatable
+        : IVisuallyUpdatable
+        , IUpdatable
         , IDisposable
         , IShaderTarget
     {
@@ -42,7 +43,7 @@ namespace OpenTKMinecraft.Components
             }, PrimitiveType.Points);
         }
 
-        public void Update(double time, double delta)
+        public void Update(double time, double delta, float aspectratio)
         {
             LastFPS = 1 / delta;
         }
@@ -75,6 +76,8 @@ namespace OpenTKMinecraft.Components
             _crosshair.Dispose();
             Program.Dispose();
         }
+
+        public void Update(double time, double delta) => Update(time, delta, Window.Width / (float)Window.Height);
     }
 
     public sealed unsafe class HUDVertexBuffer

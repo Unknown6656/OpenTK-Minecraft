@@ -1,13 +1,8 @@
-﻿using System.Text.RegularExpressions;
-using System.Runtime.InteropServices;
-using System.Collections.Generic;
-using System.Drawing.Imaging;
-using System.Diagnostics;
+﻿using System.Collections.Generic;
 using System.Threading;
 using System.Drawing;
 using System.Linq;
 using System.Text;
-using System.IO;
 using System;
 
 using OpenTK.Graphics.OpenGL4;
@@ -15,7 +10,6 @@ using OpenTK.Graphics;
 using OpenTK.Input;
 using OpenTK;
 
-using OpenTKMinecraft.Properties;
 using OpenTKMinecraft.Components;
 using OpenTKMinecraft.Minecraft;
 using OpenTKMinecraft.Utilities;
@@ -27,18 +21,19 @@ namespace OpenTKMinecraft
     public sealed unsafe class MainWindow
         : GameWindow
     {
-        public PlayerCamera Camera => Scene.Camera as PlayerCamera;
+        public World World => Scene.Object.World;
+        public PlayerCamera Camera => Scene.Object.Camera as PlayerCamera;
+        public PostEffectShaderProgram<Scene> Scene { private set; get; }
+        public HUD HUD { private set; get; }
+
         public float MouseSensitivityFactor { set; get; } = 1;
         public bool IsPaused { private set; get; }
         public double Time { private set; get; }
         public string[] Arguments { get; }
 
-        private PostEffectShaderProgram<Scene> _scenefx;
         private int _mousex, _mousey;
         private float _mousescroll;
 
-        public HUD HUD { private set; get; }
-        public Scene Scene => _scenefx;
 
 
         public MainWindow(string[] args)
@@ -53,7 +48,7 @@ namespace OpenTKMinecraft
         {
             Closed += (s, a) => Exit();
 
-            _scenefx = new PostEffectShaderProgram<Scene>(
+            Scene = new PostEffectShaderProgram<Scene>(
                 new Scene(this, new ShaderProgram(
                     "Scene Shader",
                     new[] { "SCENE" },
@@ -73,7 +68,10 @@ namespace OpenTKMinecraft
                     (ShaderProgramType.FragmentShader, "shaders/scene_effect.frag")
                 ),
                 this
-            );
+            )
+            {
+                //UsePostEffect = false
+            };
             HUD = new HUD(this, new ShaderProgram(
                 "HUD Shader",
                 new[] { "HUD" },
@@ -81,8 +79,8 @@ namespace OpenTKMinecraft
                 (ShaderProgramType.FragmentShader, "shaders/hud.frag")
             ));
 
-            Scene.Lights.Add(Light.CreateDirectionalLight(new Vector3(-1, -1, 0), Color.WhiteSmoke));
-            Scene.Lights.Add(Light.CreatePointLight(new Vector3(0, 0, 2), Color.Wheat, 10));
+            Scene.Object.AddLight(Light.CreateDirectionalLight(new Vector3(-1, -1, 0), Color.WhiteSmoke));
+            Scene.Object.AddLight(Light.CreatePointLight(new Vector3(0, 0, 2), Color.Wheat, 10));
 
             BuildScene();
             ResetCamera();
@@ -94,12 +92,12 @@ namespace OpenTKMinecraft
 
         internal void BuildScene()
         {
-            Scene.World[0, 15, 0].Material = BlockMaterial.__DEBUG__;
+            World[0, 15, 0].Material = BlockMaterial.__DEBUG__;
 
             for (int i = 0; i < 4; ++i)
                 for (int j = 0; j < 4; ++j)
                     if ((i == 0) || (i == 3) || (j == 0) || (j == 3))
-                        Scene.World[1 - i, j + 1, 0].Material = ((i ^ j) & 1) != 0 ? BlockMaterial.Stone : BlockMaterial.Diamond;
+                        World[1 - i, j + 1, 0].Material = ((i ^ j) & 1) != 0 ? BlockMaterial.Stone : BlockMaterial.Diamond;
 
             int side = 6; // 9
 
@@ -110,11 +108,11 @@ namespace OpenTKMinecraft
 
                     if ((i * i + j * j) < 15)
                     {
-                        Scene.World[i, y, j].Material = BlockMaterial.Sand;
-                        Scene.World[i, y - 1, j].Material = BlockMaterial.Grass;
+                        World[i, y, j].Material = BlockMaterial.Sand;
+                        World[i, y - 1, j].Material = BlockMaterial.Grass;
                     }
                     else
-                        Scene.World[i, y, j].Material = BlockMaterial.Grass;
+                        World[i, y, j].Material = BlockMaterial.Grass;
                 }
 
             (int xp, int yp) = (15, 15);
@@ -125,13 +123,12 @@ namespace OpenTKMinecraft
                 for (int j = -2; j <= 2; ++j)
                     if ((i >= -1) && (i < 2) && (j >= -1) && (j < 2))
                     {
-                        Scene.World[xp + i, -1, yp + j].Material = BlockMaterial.Stone;
-
-                        Scene.World[xp + i, 0, yp + j].Material = BlockMaterial.Water;
-                        Scene.World[xp + i, 0, yp + j].Move(0, -.15f, 0);
+                        World[xp + i, -1, yp + j].Material = BlockMaterial.Stone;
+                        World[xp + i, 0, yp + j].Material = BlockMaterial.Water;
+                        World[xp + i, 0, yp + j].Move(0, -.15f, 0);
                     }
                     else
-                        Scene.World[xp + i, 0, yp + j].Material = BlockMaterial.Stone;
+                        World[xp + i, 0, yp + j].Material = BlockMaterial.Stone;
 
             // Scene.World.PlaceCustomBlock(4, 1, 0, WavefrontFile.FromPath("resources/center-piece.obj"));
         }
@@ -148,7 +145,7 @@ namespace OpenTKMinecraft
 
         public override void Exit()
         {
-            _scenefx.Dispose();
+            Scene.Dispose();
             HUD.Dispose();
 
             ShaderProgram.DisposeAll();
@@ -160,7 +157,7 @@ namespace OpenTKMinecraft
         {
             GL.Viewport(0, 0, Width, Height);
 
-            _scenefx.Win_Resize(this, e);
+            Scene.OnWindowResize(this, e);
         }
 
         protected override void OnUpdateFrame(FrameEventArgs e)
@@ -172,7 +169,7 @@ namespace OpenTKMinecraft
 
             Time += e.Time;
 
-            Scene.Lights[1].Position = Matrix3.CreateRotationY((float)Time) * new Vector3(0, 2, 4);
+            Scene.Object.Lights[1].Position = Matrix3.CreateRotationY((float)Time) * new Vector3(0, 2, 4);
 
             HUD.Update(Time, e.Time);
             Scene.Update(Time, e.Time, (float)Width / Height);
@@ -182,7 +179,7 @@ namespace OpenTKMinecraft
         {
             Title = $"{1 / e.Time:F2} FPS";
 
-            _scenefx.Render(Time, Width, Height);
+            Scene.Render(Time, Width, Height);
             HUD.Render(Time, Width, Height);
 
             SwapBuffers();
@@ -260,8 +257,8 @@ namespace OpenTKMinecraft
             }
             if (kstate.IsKeyDown(Key.X))
             {
-                _scenefx.Effect++;
-                _scenefx.Effect = (PredefinedShaderEffect)((int)_scenefx.Effect % ((Enum.GetValues(typeof(PredefinedShaderEffect)) as int[]).Max() + 1));
+                Scene.Effect++;
+                Scene.Effect = (PredefinedShaderEffect)((int)Scene.Effect % ((Enum.GetValues(typeof(PredefinedShaderEffect)) as int[]).Max() + 1));
 
                 Thread.Sleep(100);
             }

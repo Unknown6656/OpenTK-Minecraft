@@ -190,7 +190,11 @@ namespace OpenTKMinecraft.Components
     public unsafe sealed class PostEffectShaderProgram<T>
         : IShaderTarget
         , IDisposable
-        where T : class, IShaderTarget, IDisposable
+        , IVisuallyUpdatable
+        where T : class
+                , IShaderTarget
+                , IDisposable
+                , IVisuallyUpdatable
     {
         private static readonly Vector4[] _vertices = new[]
         {
@@ -201,13 +205,14 @@ namespace OpenTKMinecraft.Components
             new Vector4(1, -1, 0, 1),
             new Vector4(1, 1, 0, 1),
         };
-        private readonly int _vertexarr, _vertexbuff, _coltex, _deptex;
+        private readonly int _vertexarr, _vertexbuff, _coltex, _deptex, _edeptex;
         private bool _disposed;
 
         public bool UsePostEffect { set; get; } = true;
         public PredefinedShaderEffect Effect { set; get; }
-        public int RenderedColorTextureID { get; private set; }
+        public int RenderedEffectiveDepthTextureID { get; private set; }
         public int RenderedDepthTextureID { get; private set; }
+        public int RenderedColorTextureID { get; private set; }
         public int FramebufferID { get; private set; }
         public ShaderProgram Program { get; }
         public MainWindow Window { get; }
@@ -237,8 +242,9 @@ namespace OpenTKMinecraft.Components
 
             _coltex = GL.GetUniformLocation(Program.ID, "renderedColor");
             _deptex = GL.GetUniformLocation(Program.ID, "renderedDepth");
+            _edeptex = GL.GetUniformLocation(Program.ID, "renderedEffectiveDepth");
 
-            Window.Resize += Win_Resize;
+            Window.Resize += OnWindowResize;
         }
 
         ~PostEffectShaderProgram() => Dispose();
@@ -252,7 +258,7 @@ namespace OpenTKMinecraft.Components
                 else
                     _disposed = true;
 
-                Window.Resize -= Win_Resize;
+                Window.Resize -= OnWindowResize;
 
                 Program.Use();
 
@@ -308,11 +314,15 @@ namespace OpenTKMinecraft.Components
             GL.BindTexture(TextureTarget.Texture2D, RenderedDepthTextureID);
             GL.Uniform1(_deptex, 2);
 
+            GL.ActiveTexture(TextureUnit.Texture3);
+            GL.BindTexture(TextureTarget.Texture2D, RenderedEffectiveDepthTextureID);
+            GL.Uniform1(_edeptex, 3);
+
             GL.BindVertexArray(_vertexarr);
             GL.DrawArrays(PrimitiveType.Triangles, 0, _vertices.Length);
         }
 
-        internal void Win_Resize(object sender, EventArgs e)
+        internal void OnWindowResize(object sender, EventArgs e)
         {
             if ((Window.Width < 10) || (Window.Height < 10) || !UsePostEffect)
                 return;
@@ -325,6 +335,7 @@ namespace OpenTKMinecraft.Components
         {
             GL.DeleteTexture(RenderedColorTextureID);
             GL.DeleteTexture(RenderedDepthTextureID);
+            GL.DeleteTexture(RenderedEffectiveDepthTextureID);
             GL.DeleteFramebuffer(FramebufferID);
         }
 
@@ -346,15 +357,25 @@ namespace OpenTKMinecraft.Components
             RenderedDepthTextureID = GL.GenTexture();
 
             GL.BindTexture(TextureTarget.Texture2D, RenderedDepthTextureID);
-            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.DepthComponent, Window.Width, Window.Height, 0, PixelFormat.DepthComponent, PixelType.Float, IntPtr.Zero);
+            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba32f, Window.Width, Window.Height, 0, PixelFormat.Rgba, PixelType.Float, IntPtr.Zero);
+            GL.TexParameterI(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, new[] { (int)TextureMagFilter.Nearest });
+            GL.TexParameterI(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, new[] { (int)TextureMinFilter.Nearest });
+            GL.TexParameterI(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, new[] { (int)TextureWrapMode.ClampToBorder });
+            GL.TexParameterI(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, new[] { (int)TextureWrapMode.ClampToBorder });
+
+            RenderedEffectiveDepthTextureID = GL.GenTexture();
+
+            GL.BindTexture(TextureTarget.Texture2D, RenderedEffectiveDepthTextureID);
+            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.DepthComponent32f, Window.Width, Window.Height, 0, PixelFormat.DepthComponent, PixelType.Float, IntPtr.Zero);
             GL.TexParameterI(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, new[] { (int)TextureMagFilter.Nearest });
             GL.TexParameterI(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, new[] { (int)TextureMinFilter.Nearest });
             GL.TexParameterI(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, new[] { (int)TextureWrapMode.ClampToBorder });
             GL.TexParameterI(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, new[] { (int)TextureWrapMode.ClampToBorder });
 
             GL.FramebufferTexture(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, RenderedColorTextureID, 0);
-            GL.FramebufferTexture(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthAttachment, RenderedDepthTextureID, 0);
-            GL.DrawBuffers(1, new[] { DrawBuffersEnum.ColorAttachment0 });
+            GL.FramebufferTexture(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment1, RenderedDepthTextureID, 0);
+            GL.FramebufferTexture(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthAttachment, RenderedEffectiveDepthTextureID, 0);
+            GL.DrawBuffers(2, new[] { DrawBuffersEnum.ColorAttachment0, DrawBuffersEnum.ColorAttachment1 });
 
             FramebufferErrorCode err = GL.CheckFramebufferStatus(FramebufferTarget.Framebuffer);
 
@@ -363,6 +384,8 @@ namespace OpenTKMinecraft.Components
 
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
         }
+
+        public void Update(double time, double delta, float aspectratio) => Object.Update(time, delta, aspectratio);
 
         public static implicit operator T(PostEffectShaderProgram<T> fx) => fx.Object;
     }

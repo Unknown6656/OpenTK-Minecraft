@@ -3,7 +3,7 @@
 
 out float vs_time;
 out vec2 vs_texcoord;
-out vec3 vs_worldpos;
+out vec4 vs_worldpos;
 out vec3 vs_position;
 out vec3 vs_bitangent;
 out vec3 vs_tangent;
@@ -25,8 +25,8 @@ void main(void)
         vs_bitangent,
         vs_normal
     ));
-    vs_worldpos = (cam_modelview * vec4(position, 1)).xyz;
-    vs_eyedir = normalize(cam_position - vs_worldpos);
+    vs_worldpos = cam_modelview * vec4(position, 1);
+    vs_eyedir = normalize(cam_position - vs_worldpos.xyz);
     vs_texcoord = vec2(vcolor.y, 1 - vcolor.x);
     vs_position = position;
     vs_color = vcolor;

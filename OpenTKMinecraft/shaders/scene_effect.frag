@@ -1,10 +1,11 @@
 ﻿#version 460 core
 #include "common_uniforms.glsl"
 
-layout (location = 39 ) uniform int PredefinedEffect;
+layout (location = 39) uniform int PredefinedEffect;
 
 uniform sampler2D renderedColor;
 uniform sampler2D renderedDepth;
+uniform sampler2D renderedEffectiveDepth;
 
 in float vs_time;
 in float vs_aspectratio;
@@ -60,10 +61,10 @@ vec4 convolute(vec2 coord, mat3 H, mat3 V, int mode, bool gray)
     return mode == CONVOLUTION_DIRECTION ? d : g;
 }
 
-void applyeffect(int fx)
+vec4 getcolor(vec2 coord, int fx)
 {
     if (fx == FX_EDGE)
-        color = texture(renderedColor, uv) - convolute(uv, mat3( 
+        return texture(renderedColor, coord) - convolute(coord, mat3( 
             1,  2,  1,
             0,  0,  0,
             -1, -2, -1
@@ -73,21 +74,23 @@ void applyeffect(int fx)
             1, 0, -1
         ), CONVOLUTION_GRADIENT, true);
     else if (fx == FX_WOBB)
-        color = texture(renderedColor, uv + 0.01 * vec2(sin(vs_time + window_width * uv.x / 1.25), cos(vs_time + window_height * uv.y / 1.25)));
+        return texture(renderedColor, coord + 0.01 * vec2(sin(vs_time + window_width * coord.x / 1.25), cos(vs_time + window_height * coord.y / 1.25)));
     else
-        color = texture(renderedColor, uv);
+        return texture(renderedColor, coord);
 }
 
 void main(void)
 {
-    applyeffect(PredefinedEffect);
+    float depth = clamp(texture(renderedDepth, uv).r, 0, 1);
 
-    color.a = 1;
+    color = getcolor(uv, PredefinedEffect);
 
     float dist = length(vs_pos * vec2(vs_aspectratio, 1));
 
     if (paused)
         color = grayscale(color);
-
+    
     color *= (1 - dist / (paused ? 2.5 : 5));
+    // color = color * depth + texture(renderedColor, uv) * (1 - depth);
+    color.a = 1;
 }

@@ -1,15 +1,9 @@
-﻿using System.Runtime.InteropServices;
-using System.Collections.Generic;
-using System.Drawing.Imaging;
-using System.Drawing;
-using System.Linq;
-using System;
+﻿using System;
 
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Graphics;
 using OpenTK;
 
-using OpenTKMinecraft.Utilities;
 using OpenTKMinecraft.Minecraft;
 using OpenTKMinecraft.Native;
 
@@ -20,6 +14,7 @@ namespace OpenTKMinecraft.Components
 
     public sealed class Scene
         : Renderable
+        , IVisuallyUpdatable
         , IShaderTarget
     {
         public Camera Camera { set; get; }
@@ -27,6 +22,14 @@ namespace OpenTKMinecraft.Components
         public MainWindow Window { get; }
         public Lights Lights { get; }
         public World World { get; }
+
+        public RenderableBlock this[long x, long y, long z]
+        {
+            set => World[x, y, z] = value;
+            get => World[x, y, z];
+        }
+
+        public ref Light this[int i] => ref Lights[i];
 
 
         public Scene(MainWindow win, ShaderProgram program)
@@ -118,5 +121,7 @@ namespace OpenTKMinecraft.Components
             Lights?.Dispose();
             World?.Dispose();
         }
+
+        public int AddLight(Light? light, RenderableBlock assoc_block = null) => Lights.Add(light, assoc_block);
     }
 }

@@ -113,6 +113,7 @@
     <Content Include="resources\*">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <None Include="resources\anaglyph.png" />
     <None Include="resources\splashimage.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

@@ -9,5 +9,5 @@ void main(void)
     gl_Position = position;
 
     vs_position = position.xyz;
-    vs_texcoord = position.xy / 2 + 0.5;
+    vs_texcoord = vec2(position.x / 2 + 0.5, 0.5 - position.y / 2);
 }

@@ -75,8 +75,8 @@ namespace OpenTKMinecraft.Components
 
             Bind();
 
-            GL.LineWidth(1f);
-            GL.PointSize(1f);
+            GL.LineWidth(2f);
+            GL.PointSize(2f);
             // GL.PatchParameter(PatchParameterInt.PatchVertices, 4);
 
             GL.VertexAttrib1(WINDOW_TIME, time);

@@ -22,7 +22,7 @@ namespace OpenTKMinecraft
     public sealed unsafe class MainWindow
         : GameWindow
     {
-        internal const int KEYBOARD_TOGGLE_DELAY = 100;
+        internal const int KEYBOARD_TOGGLE_DELAY = 200;
 
         public World World => Scene.Object.World;
         public PlayerCamera Camera => Scene.Object.Camera as PlayerCamera;
@@ -36,7 +36,6 @@ namespace OpenTKMinecraft
 
         private int _mousex, _mousey;
         private float _mousescroll;
-
 
 
         public MainWindow(string[] args)
@@ -204,7 +203,7 @@ namespace OpenTKMinecraft
             int δx = _mousex - mstate.X;
             int δy = _mousey - mstate.Y;
             float δs = _mousescroll - mstate.WheelPrecise;
-            float speed = .1f;
+            float speed = .075f;
 
             if (kstate.IsKeyDown(Key.H))
             {
@@ -231,19 +230,25 @@ namespace OpenTKMinecraft
             else if (IsPaused)
                 return;
 
-            if (kstate.IsKeyDown(Key.AltLeft))
-                speed *= 10;
             if (kstate.IsKeyDown(Key.ShiftLeft))
                 speed /= 10;
+            if (kstate.IsKeyDown(Key.AltLeft))
+            {
+                speed *= 3;
+
+                Scene.EdgeBlurMode = EdgeBlurMode.RadialBlur;
+            }
+            else
+                Scene.EdgeBlurMode = EdgeBlurMode.BoxBlur;
 
             if (kstate.IsKeyDown(Key.Escape))
                 Exit();
             if (kstate.IsKeyDown(Key.Number1))
-                Scene.Program.PolygonMode = PolygonMode.Point;
+                Scene.Object.Program.PolygonMode = PolygonMode.Point;
             if (kstate.IsKeyDown(Key.Number2))
-                Scene.Program.PolygonMode = PolygonMode.Line;
+                Scene.Object.Program.PolygonMode = PolygonMode.Line;
             if (kstate.IsKeyDown(Key.Number3))
-                Scene.Program.PolygonMode = PolygonMode.Fill;
+                Scene.Object.Program.PolygonMode = PolygonMode.Fill;
             if (kstate.IsKeyDown(Key.W))
                 Camera.MoveForwards(speed);
             if (kstate.IsKeyDown(Key.S))
@@ -276,6 +281,12 @@ namespace OpenTKMinecraft
 
                 Thread.Sleep(KEYBOARD_TOGGLE_DELAY);
             }
+            if (kstate.IsKeyDown(Key.Number6))
+            {
+                HUD.UseHUD ^= true;
+
+                Thread.Sleep(KEYBOARD_TOGGLE_DELAY);
+            }
             if (kstate.IsKeyDown(Key.V))
             {
                 VSync = VSync == VSyncMode.Off ? VSyncMode.On : VSyncMode.Off;
@@ -289,6 +300,17 @@ namespace OpenTKMinecraft
 
                 Thread.Sleep(KEYBOARD_TOGGLE_DELAY);
             }
+            if (kstate.IsKeyDown(Key.F))
+                using (Bitmap bmp = new Bitmap(Width, Height))
+                {
+                    System.Drawing.Imaging.BitmapData data = bmp.LockBits(new Rectangle(0, 0, Width, Height), System.Drawing.Imaging.ImageLockMode.WriteOnly, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+
+                    GL.ReadPixels(0, 0, Width, Height, PixelFormat.Bgr, PixelType.UnsignedByte, data.Scan0);
+
+                    bmp.UnlockBits(data);
+                    bmp.RotateFlip(RotateFlipType.RotateNoneFlipY);
+                    bmp.Save("framebuffer.png");
+                }
 
             if (Camera.IsStereoscopic)
             {
@@ -321,6 +343,7 @@ namespace OpenTKMinecraft
 [P] Pause
 [ESC] Exit
 [H] Show this help window
+[F] Save screenshot to 'framebuffer.png'
 
 [W] Move forwards
 [A] Move left
@@ -338,6 +361,7 @@ namespace OpenTKMinecraft
 [3] Display Faces
 [4] Toggle Stereoscopic display
 [5] Toggle PostProcessing effects
+[6] Toggle HUD
 [P.Up] Increase focal distance (Stereoscopic only)
 [P.Down] Decrease focal distance (Stereoscopic only)
 [Home] Increase eye separation (Stereoscopic only)

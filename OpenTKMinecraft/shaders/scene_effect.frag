@@ -95,29 +95,32 @@ void main(void)
     float fog = clamp(pow(dist / 1.1, 2) + 0.2 - texture(renderedDepth, uv).r, 0, 1);
     vec4 sum = vec4(0);
 
-    if (EdgeBlurMode == EDGE_BOX)
-    {
-        int side = 3;
-
-        for (int i = -side; i <= side; ++i)
-            for (int j = -side; j <= side; ++j)
-                sum += getcolor(uv + 2 * vec2(i / window_width, j / window_height), PredefinedEffect);
-
-        sum /= pow(2 * side + 1, 2);
-    }
-    else if (EdgeBlurMode == EDGE_RADIAL)
-    {
-        vec2 tcoord = uv - 0.5;
-        
-        for (int i = 0; i < 12; ++i)
+    if (PredefinedEffect == FX_NONE)
+        if (EdgeBlurMode == EDGE_BOX)
         {
-            float sc = 1 - 0.1 * (i / 11.0);
-        
-            sum += getcolor(tcoord * sc + 0.5, PredefinedEffect);
+            int side = 3;
+
+            for (int i = -side; i <= side; ++i)
+                for (int j = -side; j <= side; ++j)
+                    sum += getcolor(uv + 2 * vec2(i / window_width, j / window_height), PredefinedEffect);
+
+            sum /= pow(2 * side + 1, 2);
         }
-        
-        sum /= 12;
-    }
+        else if (EdgeBlurMode == EDGE_RADIAL)
+        {
+            vec2 tcoord = uv - 0.5;
+            
+            for (int i = 0; i < 12; ++i)
+            {
+                float sc = 1 - 0.1 * (i / 11.0);
+            
+                sum += getcolor(tcoord * sc + 0.5, PredefinedEffect);
+            }
+            
+            sum /= 12;
+        }
+        else
+            fog = 0;
     else
         fog = 0;
     

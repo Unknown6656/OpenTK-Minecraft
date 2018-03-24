@@ -1,12 +1,10 @@
 ﻿using System.Text.RegularExpressions;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Linq;
 using System.IO;
 using System;
 
 using OpenTK.Graphics.OpenGL4;
-using OpenTK.Graphics;
 using OpenTK;
 
 using OpenTKMinecraft.Native;
@@ -202,12 +200,12 @@ namespace OpenTKMinecraft.Components
     {
         private static readonly Vector4[] _vertices = new[]
         {
-            new Vector4(-1, -1, 0, 1),
-            new Vector4(1, -1, 0, 1),
-            new Vector4(-1, 1, 0, 1),
-            new Vector4(-1, 1, 0, 1),
-            new Vector4(1, -1, 0, 1),
-            new Vector4(1, 1, 0, 1),
+            new Vector4(-1, -1, .001f, 1),
+            new Vector4(1, -1, .001f, 1),
+            new Vector4(-1, 1, .001f, 1),
+            new Vector4(-1, 1, .001f, 1),
+            new Vector4(1, -1, .001f, 1),
+            new Vector4(1, 1, .001f, 1),
         };
         private readonly int _vertexarr, _vertexbuff, _coltex, _deptex, _edeptex;
         private bool _disposed;
@@ -229,6 +227,7 @@ namespace OpenTKMinecraft.Components
             Object = obj;
             Window = win;
             Program = p;
+            Program.PolygonMode = PolygonMode.Fill;
 
             _vertexarr = GL.GenVertexArray();
             _vertexbuff = GL.GenBuffer();
@@ -284,19 +283,6 @@ namespace OpenTKMinecraft.Components
 
             Object.Render(time, width, height);
 
-            // for debugging:
-            //
-            //using (Bitmap bmp = new Bitmap(Window.Width, Window.Height))
-            //{
-            //    System.Drawing.Imaging.BitmapData data = bmp.LockBits(new Rectangle(0, 0, Window.Width, Window.Height), System.Drawing.Imaging.ImageLockMode.WriteOnly, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
-            //
-            //    GL.ReadPixels(0, 0, Window.Width, Window.Height, PixelFormat.Bgr, PixelType.UnsignedByte, data.Scan0);
-            //
-            //    bmp.UnlockBits(data);
-            //    bmp.RotateFlip(RotateFlipType.RotateNoneFlipY);
-            //    bmp.Save("framebuffer.png");
-            //}
-
             if (!UsePostEffect)
                 return;
 
@@ -325,7 +311,6 @@ namespace OpenTKMinecraft.Components
             GL.Uniform1(_edeptex, 3);
 
             GL.BindVertexArray(_vertexarr);
-            //GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Fill);
             GL.DrawArrays(PrimitiveType.Triangles, 0, _vertices.Length);
         }
 

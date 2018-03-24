@@ -30,9 +30,6 @@ namespace OpenTKMinecraft.Native
         public const int SCENE_ENVIRONMENT_LIGHTCOUNT = 41;
 
         public const int HUD_VERTEX_POSITION = 1;
-        public const int HUD_VERTEX_NORMAL = 2;
-        public const int HUD_VERTEX_COLOR = 3;
-        public const int HUD_VERTEX_TEXCOORD = 4;
 
         public const int POSTRENDER_VERTEX_POSITION = 1;
         public const int POSTRENDER_EDGEBLUR = 38;

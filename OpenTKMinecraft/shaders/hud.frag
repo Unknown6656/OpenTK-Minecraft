@@ -1,14 +1,14 @@
 ﻿#version 460 core
 
+uniform sampler2D overlayTexture;
+
 in vec3 vs_position;
-in vec3 vs_normal;
 in vec2 vs_texcoord;
-in vec4 vs_color;
 
 out vec4 color;
 
 
 void main(void)
 {
-    color = vs_color;
+    color = texture(overlayTexture, vs_texcoord);
 }

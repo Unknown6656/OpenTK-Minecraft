@@ -1,6 +1,5 @@
-﻿using System.Runtime.InteropServices;
-using System.Collections.Generic;
-using System.Windows.Forms;
+﻿using System.Drawing.Drawing2D;
+using System.Drawing.Text;
 using System.Threading;
 using System.Drawing;
 using System.Linq;
@@ -17,9 +16,8 @@ using SDI = System.Drawing.Imaging;
 
 namespace OpenTKMinecraft.Components
 {
-    using System.Drawing.Drawing2D;
-    using System.Drawing.Text;
     using static SHADER_BIND_LOCATIONS;
+    using static Math;
 
 
     public unsafe sealed class HUD
@@ -96,16 +94,42 @@ namespace OpenTKMinecraft.Components
                             //g.CompositingQuality = CompositingQuality.HighQuality;
                             //g.InterpolationMode = InterpolationMode.HighQualityBilinear;
 
-                            float hx = bmp.Width / 2f;
-                            float hy = bmp.Height / 2f;
+                            int w = bmp.Width;
+                            int h = bmp.Height;
+                            float w2 = w / 2f;
+                            float h2 = h / 2f;
                             const int crosshairsz = 15;
 
-                            g.DrawLine(_penfg, hx - crosshairsz, hy, hx + crosshairsz, hy);
-                            g.DrawLine(_penfg, hx, hy - crosshairsz, hx, hy + crosshairsz);
+                            g.DrawLine(_penfg, w2 - crosshairsz, h2, w2 + crosshairsz, h2);
+                            g.DrawLine(_penfg, w2, h2 - crosshairsz, w2, h2 + crosshairsz);
 
-                            g.DrawString($"Position: {_dat.Position}\nVAngle: {_dat.VDirection}\nHAngle: {_dat.HDirection}", _fontfg, Brushes.WhiteSmoke, 0, 0);
-                            // TODO
+                            g.DrawString($"[{_dat.Position.X:F2}, {_dat.Position.Y:F2}, {_dat.Position.Z:F2}]", _fontfg, Brushes.WhiteSmoke, 20, 20);
+                            g.DrawString($"{_dat.HDirection * 180 / PI:F2}°", _fontfg, Brushes.WhiteSmoke, w2, 20);
+                            g.DrawString($"{_dat.VDirection * 90:F2}°", _fontfg, Brushes.WhiteSmoke, 20, h2);
 
+                            const float bardist = 20;
+
+                            { // y scale
+                                float ybar = h2 + (float)_dat.VDirection * h2;
+                                int ybarcnt = (int)(h2 / bardist) + 1;
+
+                                for (int i = -ybarcnt; i <= ybarcnt + 1; ++i)
+                                {
+                                    float yoffs = ybar + i * bardist;
+
+                                    if ((yoffs >= 0) && (yoffs < h))
+                                        g.DrawLine(_penfg, 0, yoffs, Abs(i % 4) == 1 ? 20 : Abs(i % 2) == 0 ? 10 : 5, yoffs);
+                                }
+                            }
+                            { // x scale
+                                float xbar = w2 + (float)((_dat.HDirection % (2 * PI)) * w2 / PI);
+                                int xbarcnt = (int)(w2 / bardist) + 1;
+
+                                float xoffs = w2 + ((xbar - w2) % (bardist * 4));
+
+                                for (int i = -xbarcnt; i <= xbarcnt + 1; ++i)
+                                    g.DrawLine(_penfg, xoffs + i * bardist, 0, xoffs + i * bardist, Abs(i % 4) == 1 ? 20 : Abs(i % 2) == 0 ? 10 : 5);
+                            }
                         }
 
                         bmp.RotateFlip(RotateFlipType.RotateNoneFlipY);
@@ -135,7 +159,6 @@ namespace OpenTKMinecraft.Components
 
             Data = new HUDData
             {
-                LastFPS = 1 / delta,
                 Width = Window.Width,
                 Height = Window.Height,
                 Time = time,
@@ -217,7 +240,6 @@ namespace OpenTKMinecraft.Components
 
     public struct HUDData
     {
-        public double LastFPS { get; set; }
         public int Width { get; set; }
         public int Height { get; set; }
         public double Delta { get; set; }

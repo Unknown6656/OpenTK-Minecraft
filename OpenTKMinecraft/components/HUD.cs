@@ -159,7 +159,7 @@ namespace OpenTKMinecraft.Components
 
                             if (_dat.Paused)
                             {
-                                DrawCenteredString("PAUSED", _bigfontfg, Brushes.BurlyWood, w2, 80);
+                                DrawCenteredString("PAUSED", _bigfontfg, Brushes.DarkRed, w2, 80);
                             }
                         }
 

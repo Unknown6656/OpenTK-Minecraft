@@ -122,7 +122,7 @@ namespace OpenTKMinecraft.Components
         public int TextureID { get; private set; }
 
 
-        ~TextureSet() => Dispose();
+        // ~TextureSet() => Dispose();
 
         internal TextureSet(ShaderProgram program, BlockMaterial? assoc, params (string Path, TextureType Type)[] textures)
             : base(program, 0)
@@ -214,7 +214,16 @@ namespace OpenTKMinecraft.Components
         public static void InitKnownMaterialTexures(ShaderProgram program)
         {
             foreach (BlockMaterial mat in BlockInfo.Blocks.Keys)
-                new TextureSet(program, mat, BlockInfo.Blocks[mat].Textures);
+            {
+                (string, TextureType)[] tex = BlockInfo.Blocks[mat].Textures;
+
+                if (KnownTextures.ContainsKey(mat))
+                {
+                    KnownTextures[mat]?.Dispose();
+                    KnownTextures[mat] = new TextureSet(program, mat, tex);
+                    KnownTextures[mat].UpdateTexture(true, mat, tex);
+                }
+            }
         }
 
         private unsafe int InitTexture()

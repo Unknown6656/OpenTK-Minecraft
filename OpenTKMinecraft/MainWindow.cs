@@ -85,6 +85,7 @@ namespace OpenTKMinecraft
                 (ShaderProgramType.FragmentShader, "shaders/hud.frag")
             ));
 
+            MainProgram.spscreen.Text = ("Intializing textures ...", "");
             TextureSet.InitKnownMaterialTexures(Scene.Object.Program);
 
             Scene.Object.AddLight(Light.CreateDirectionalLight(new Vector3(-1, -1, 0), Color.WhiteSmoke));

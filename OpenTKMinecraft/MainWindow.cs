@@ -1,4 +1,5 @@
-﻿using System.Windows.Forms;
+﻿using System.Collections.Generic;
+using System.Windows.Forms;
 using System.Threading;
 using System.Drawing;
 using System.Linq;
@@ -23,6 +24,7 @@ namespace OpenTKMinecraft
         internal const int KEYBOARD_TOGGLE_DELAY = 200;
 
         public World World => Scene.Object.World;
+        public HUDWindow PauseScreen => HUD.PauseScreen as HUDWindow;
         public PlayerCamera Camera => Scene.Object.Camera as PlayerCamera;
         public PostEffectShaderProgram<Scene> Scene { private set; get; }
         public HUD HUD { private set; get; }
@@ -33,6 +35,7 @@ namespace OpenTKMinecraft
         public double Time { private set; get; }
         public string[] Arguments { get; }
 
+        private readonly Queue<Action> _queue = new Queue<Action>();
         private int _mousex, _mousey;
         private float _mousescroll;
 
@@ -81,13 +84,9 @@ namespace OpenTKMinecraft
                 new[] { "HUD" },
                 (ShaderProgramType.VertexShader, "shaders/hud.vert"),
                 (ShaderProgramType.FragmentShader, "shaders/hud.frag")
-            ))
-            {
-                PauseScreen = new HUDWindow(null)
-                {
-                    // todo ?
-                }
-            };
+            ));
+
+            BuildHUD();
 
             MainProgram.spscreen.Text = ("Intializing textures ...", "");
             TextureSet.InitKnownMaterialTexures(Scene.Object.Program);
@@ -107,6 +106,69 @@ namespace OpenTKMinecraft
             MainProgram.spscreen.Close();
 
             ShowHelp();
+        }
+
+        internal void BuildHUD()
+        {
+            HUD.PauseScreen = new HUDWindow(null)
+            {
+                Width = 500,
+                Height = 1080,
+                Text = "PAUSE MENU",
+                Font = new Font("Purista", 40, FontStyle.Bold | FontStyle.Underline, GraphicsUnit.Point),
+                ForegroundColor = Color.Red
+            };
+
+            Font fnt = new Font("Purista", 24, GraphicsUnit.Point);
+            Color fg = Color.Black;
+            Color bg = Color.Gray;
+            float hgt = 40;
+
+            PauseScreen.AddFill(new HUDCheckbox(null)
+            {
+                Font = fnt,
+                Height = hgt,
+                Text = "Vertical Syncchronization",
+                BackgroundColor = bg,
+                ForegroundColor = fg,
+            }, 110).StateChanged += (s, a) => Invoke(() => VSync = a ? VSyncMode.On : VSyncMode.Off);
+            PauseScreen.AddFill(new HUDCheckbox(null)
+            {
+                Font = fnt,
+                Height = hgt,
+                Text = "Use post-render effects",
+                BackgroundColor = bg,
+                ForegroundColor = fg,
+                IsChecked = Scene.UsePostEffect,
+            }, 160).StateChanged += (s, a) => Invoke(() => Scene.UsePostEffect = a);
+            PauseScreen.AddFill(new HUDButton(null)
+            {
+                Font = fnt,
+                Height = hgt,
+                Text = "Continue",
+                BackgroundColor = bg,
+                ForegroundColor = fg,
+            }, 200).Clicked += (s, a) =>
+            {
+                IsPaused = false;
+                System.Windows.Forms.Cursor.Position = new Point(X + (Width / 2), Y + (Height / 2));
+            };
+            PauseScreen.AddFill(new HUDButton(null)
+            {
+                Font = fnt,
+                Height = hgt,
+                Text = "Help",
+                BackgroundColor = bg,
+                ForegroundColor = fg,
+            }, 250).Clicked += (s, a) => ShowHelp();
+            PauseScreen.AddFill(new HUDButton(null)
+            {
+                Font = fnt,
+                Height = hgt,
+                Text = "Exit",
+                BackgroundColor = bg,
+                ForegroundColor = fg,
+            }, 300).Clicked += (s, a) => Exit();
         }
 
         internal void BuildScene()
@@ -180,11 +242,12 @@ namespace OpenTKMinecraft
 
             Scene.OnWindowResize(this, e);
 
-            if (HUD.PauseScreen is HUDControl c)
-            {
-                c.CenterX = Width / 2f;
-                c.CenterY = Height / 2f;
-            }
+            const float BORDER = 75;
+
+            PauseScreen.Width = Min(500, Width - (2 * BORDER));
+            PauseScreen.Height = Height - (2 * BORDER);
+            PauseScreen.CenterX = Width / 2f;
+            PauseScreen.CenterY = Height / 2f;
         }
 
         protected override void OnUpdateFrame(FrameEventArgs e)
@@ -211,6 +274,10 @@ namespace OpenTKMinecraft
             HUD.Render(Time + PausedTime, Width, Height);
 
             SwapBuffers();
+
+            lock (_queue)
+                foreach (Action a in _queue)
+                    a();
         }
 
         internal void HandleInput()
@@ -229,9 +296,12 @@ namespace OpenTKMinecraft
                 return;
             }
 
-            if (kstate.IsKeyDown(Key.P))
+            if (kstate.IsKeyDown(Key.Escape))
             {
-                CursorVisible = (IsPaused = !IsPaused);
+                if (kstate.IsKeyDown(Key.LShift) || kstate.IsKeyDown(Key.RShift))
+                    Exit();
+
+                IsPaused ^= true;
 
                 Thread.Sleep(KEYBOARD_TOGGLE_DELAY);
 
@@ -258,8 +328,6 @@ namespace OpenTKMinecraft
             else
                 Scene.EdgeBlurMode = EdgeBlurMode.BoxBlur;
 
-            if (kstate.IsKeyDown(Key.Escape))
-                Exit();
             if (kstate.IsKeyDown(Key.Number1))
                 Scene.Object.Program.PolygonMode = PolygonMode.Point;
             if (kstate.IsKeyDown(Key.Number2))
@@ -301,12 +369,6 @@ namespace OpenTKMinecraft
             if (kstate.IsKeyDown(Key.Number6))
             {
                 HUD.UseHUD ^= true;
-
-                Thread.Sleep(KEYBOARD_TOGGLE_DELAY);
-            }
-            if (kstate.IsKeyDown(Key.V))
-            {
-                VSync = VSync == VSyncMode.Off ? VSyncMode.On : VSyncMode.Off;
 
                 Thread.Sleep(KEYBOARD_TOGGLE_DELAY);
             }
@@ -355,10 +417,16 @@ namespace OpenTKMinecraft
             System.Windows.Forms.Cursor.Position = new Point(X + (Width / 2), Y + (Height / 2));
         }
 
+        public void Invoke(Action a)
+        {
+            lock (_queue)
+                if (a != null)
+                    _queue.Enqueue(a);
+        }
+
         public static void ShowHelp() => MessageBox.Show(@"
 ---------------- KEYBOARD SHORTCUTS ----------------
-[P] Pause
-[ESC] Exit
+[ESC] Pause
 [H] Show this help window
 [F] Save screenshot to 'framebuffer.png'
 

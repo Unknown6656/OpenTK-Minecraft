@@ -63,6 +63,26 @@ namespace OpenTKMinecraft.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap aero_arrow {
+            get {
+                object obj = ResourceManager.GetObject("aero_arrow", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap aero_hand {
+            get {
+                object obj = ResourceManager.GetObject("aero_hand", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap anaglyph {
             get {
                 object obj = ResourceManager.GetObject("anaglyph", resourceCulture);

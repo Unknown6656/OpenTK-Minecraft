@@ -1,5 +1,4 @@
 ﻿#version 460 core
-
 #include "hud_uniforms.glsl"
 
 uniform sampler2D overlayTexture;
@@ -7,6 +6,7 @@ uniform sampler2D overlayTexture;
 in vec3 vs_position;
 in vec2 vs_texcoord;
 in float vs_time;
+in vec4 vs_excl;
 
 out vec4 color;
 
@@ -54,4 +54,7 @@ void main(void)
     }
     else
         color = texture(overlayTexture, coord);
+
+    if ((vs_texcoord.x >= vs_excl.x) && (vs_texcoord.y >= vs_excl.y) && (vs_texcoord.x < vs_excl.z) && (vs_texcoord.y < vs_excl.w))
+        color = vec4(vs_texcoord, 0, 1);
 }

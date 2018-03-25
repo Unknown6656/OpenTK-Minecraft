@@ -150,6 +150,13 @@ namespace OpenTKMinecraft.Components
                     {
                         TextureID = KnownTextures[m].TextureID;
 
+                        //Bind();
+                        // 
+                        //GL.TexParameterI(TextureTarget.ProxyTexture2D, TextureParameterName.TextureWrapS, new[] { (int)TextureWrapMode.ClampToEdge });
+                        //GL.TexParameterI(TextureTarget.ProxyTexture2D, TextureParameterName.TextureWrapT, new[] { (int)TextureWrapMode.ClampToEdge });
+                        //GL.TexParameterI(TextureTarget.ProxyTexture2D, TextureParameterName.TextureMagFilter, new[] { (int)TextureMagFilter.Nearest });
+                        //GL.TexParameterI(TextureTarget.ProxyTexture2D, TextureParameterName.TextureMinFilter, new[] { (int)TextureMinFilter.LinearMipmapLinear });
+
                         return;
                     }
 

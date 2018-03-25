@@ -1,14 +1,17 @@
 ﻿using System.Collections.Generic;
 using System.Drawing.Drawing2D;
+using System.Windows.Forms;
 using System.Drawing.Text;
 using System.Threading;
 using System.Drawing;
 using System;
 
 using OpenTK.Graphics.OpenGL4;
+using OpenTK.Input;
 using OpenTK;
 
 using OpenTKMinecraft.Components.UI;
+using OpenTKMinecraft.Properties;
 using OpenTKMinecraft.Native;
 
 using SDI = System.Drawing.Imaging;
@@ -25,7 +28,6 @@ namespace OpenTKMinecraft.Components
         , IShaderTarget
     {
         private static readonly Font _fontfg = new Font("Consolas", 16, FontStyle.Bold, GraphicsUnit.Point);
-        private static readonly Font _bigfontfg = new Font("Purista", 48, FontStyle.Bold, GraphicsUnit.Point);
         private static readonly Pen _penfg = new Pen(Color.WhiteSmoke, 3);
         private static readonly Vector4[] _vertices = new[]
         {
@@ -37,6 +39,7 @@ namespace OpenTKMinecraft.Components
             new Vector4(1, 1, 0, 1),
         };
         private readonly int _vertexarr, _vertexbuff, _hudtex;
+        private readonly object _mutex = new object();
         private readonly Thread _paintthread;
         private bool _disposed;
 
@@ -162,9 +165,9 @@ namespace OpenTKMinecraft.Components
 
                             if (_dat.Paused)
                             {
-                                DrawCenteredString("PAUSED", _bigfontfg, Brushes.Red, w2, 80);
+                                bool hover = PauseScreen?.Render(g, _dat.Mouse) ?? false;
 
-                                PauseScreen?.Render(g, default); // TODO
+                                g.DrawImage(hover ? Resources.aero_hand : Resources.aero_arrow, _dat.Mouse.X - 15, _dat.Mouse.Y, 32, 32);
                             }
                         }
 
@@ -187,14 +190,17 @@ namespace OpenTKMinecraft.Components
             GL.TexParameterI(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, new[] { (int)TextureWrapMode.ClampToBorder });
         }
 
+        public void Update(double time, double delta) => Update(time, delta, Window.ClientRectangle.Width / (float)Window.ClientRectangle.Height);
+
         public void Update(double time, double delta, float aspectratio)
         {
             PlayerCamera cam = Window.Camera;
+            Point mouse = Cursor.Position;
 
             Data = new HUDData
             {
-                Width = Window.Width,
-                Height = Window.Height,
+                Width = Window.ClientRectangle.Width,
+                Height = Window.ClientRectangle.Height,
                 Time = time,
                 Delta = delta,
                 Paused = Window.IsPaused,
@@ -203,6 +209,12 @@ namespace OpenTKMinecraft.Components
                 VDirection = cam.VerticalAngle,
                 Position = cam.Position,
                 Anaglyph = cam.IsStereoscopic,
+                Mouse = new HUDMouseData
+                {
+                    Pressed = Mouse.GetState().LeftButton == OpenTK.Input.ButtonState.Pressed,
+                    X = mouse.X - Window.ClientRectangle.Width + Window.Width + Window.X,
+                    Y = mouse.Y - Window.ClientRectangle.Height + Window.Height + Window.Y,
+                }
             };
         }
 
@@ -240,6 +252,11 @@ namespace OpenTKMinecraft.Components
                 GL.Uniform1(_hudtex, 0);
 
                 b.UnlockBits(dat);
+
+                if (PauseScreen is HUDControl c)
+                    GL.Uniform4(HUD_EXCLUDE_EFFECT, c.AbsoluteX, c.AbsoluteY, c.Width, c.Height);
+                else
+                    GL.Uniform4(HUD_EXCLUDE_EFFECT, Vector4.Zero);
             }
 
             GL.BindVertexArray(_vertexarr);
@@ -273,8 +290,6 @@ namespace OpenTKMinecraft.Components
 
             OverlayInit();
         }
-
-        public void Update(double time, double delta) => Update(time, delta, Window.Width / (float)Window.Height);
     }
 
     public struct HUDData
@@ -289,7 +304,8 @@ namespace OpenTKMinecraft.Components
         public double VDirection { get; set; }
         public double HDirection { get; set; }
         public bool UseEffect { get; set; }
-    }
+        public HUDMouseData Mouse { get; set; }
+}
 
     public struct HUDMouseData
     {

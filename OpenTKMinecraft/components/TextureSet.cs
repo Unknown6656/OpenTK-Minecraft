@@ -134,7 +134,7 @@ namespace OpenTKMinecraft.Components
 
         internal void UpdateTexture(BlockMaterial? assoc, params (string Path, TextureType Type)[] textures) => UpdateTexture(true, assoc, textures);
 
-        private void UpdateTexture(bool forced, BlockMaterial? assoc, params (string Path, TextureType Type)[] textures)
+        internal void UpdateTexture(bool forced, BlockMaterial? assoc, params (string Path, TextureType Type)[] textures)
         {
             if (assoc is BlockMaterial m)
             {
@@ -211,8 +211,16 @@ namespace OpenTKMinecraft.Components
             base.Dispose(disposing);
         }
 
+        public static void InitKnownMaterialTexures(ShaderProgram program)
+        {
+            foreach (BlockMaterial mat in BlockInfo.Blocks.Keys)
+                new TextureSet(program, mat, BlockInfo.Blocks[mat].Textures);
+        }
+
         private unsafe int InitTexture()
         {
+            MainProgram.spscreen.Subtitle = $"Building texture for '{AssociatedMaterial}'...";
+
             int sz = _size * SZCNT;
             Bitmap bmp = new Bitmap(sz, sz, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
             float[] data = new float[sz * sz * 4];
@@ -242,7 +250,7 @@ namespace OpenTKMinecraft.Components
 
             bmp.UnlockBits(dat);
 #if DEBUG
-            bmp.Save($"{OpenTKMinecraft.Program.TEMP_DIR}/texture-{AssociatedMaterial}.png");
+            bmp.Save($"{MainProgram.TEMP_DIR}/texture-{AssociatedMaterial}.png");
 #endif
             bmp.Dispose();
             bmp = null;

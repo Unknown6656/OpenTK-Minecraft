@@ -10,7 +10,7 @@ using OpenTK.Graphics.OpenGL4;
 
 namespace OpenTKMinecraft
 {
-    public static unsafe class Program
+    public static unsafe class MainProgram
     {
         public const int GL_VERSION_MAJ = 4;
         public const int GL_VERSION_MIN = 6;
@@ -22,7 +22,7 @@ namespace OpenTKMinecraft
         [HandleProcessCorruptedStateExceptions]
         public static int Main(string[] args)
         {
-            Assembly asm = typeof(Program).Assembly;
+            Assembly asm = typeof(MainProgram).Assembly;
             string dir = new FileInfo(asm.Location).Directory.FullName;
             int ret = 0;
 

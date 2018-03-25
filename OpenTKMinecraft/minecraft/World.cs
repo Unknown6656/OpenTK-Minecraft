@@ -141,7 +141,7 @@ namespace OpenTKMinecraft.Minecraft
         , IRenderable
         , IDisposable
     {
-        public const int CHUNK_SWITCH_COUNT = 64;
+        public const int CHUNK_SWITCH_COUNT = (int)(CHUNK_SIZE * CHUNK_SIZE);
         public const long CHUNK_SIZE = 16;
 
         public int BlockCount { get; private set; }
@@ -353,7 +353,7 @@ namespace OpenTKMinecraft.Minecraft
 
                 BlockInfo nfo = BlockInfo.Blocks[_mat = value];
 
-                Texture.UpdateTexture(value, nfo.Textures);
+                Texture.UpdateTexture(false, value, nfo.Textures);
 
                 if (!IsSolid)
                     AABB = null;

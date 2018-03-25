@@ -51,7 +51,7 @@ namespace OpenTKMinecraft.Components
 
         public ShaderProgram(string name, string[] constants, params (ShaderProgramType, string)[] shaders)
         {
-            Program.spscreen.Subtitle = $"Compiling shader set '{name}' ...";
+            MainProgram.spscreen.Subtitle = $"Compiling shader set '{name}' ...";
 
             Name = name;
             _shaders = shaders;
@@ -66,7 +66,7 @@ namespace OpenTKMinecraft.Components
 
         private int CompileShader(ShaderProgramType type, string path)
         {
-            Program.spscreen.Subtitle = $"Compiling shader set '{Name}' ...\r\n{path} ({type})";
+            MainProgram.spscreen.Subtitle = $"Compiling shader set '{Name}' ...\r\n{path} ({type})";
 
             Regex reg_exprbody = new Regex(@"\)\s*\->(?<expr>[^\;]+?)\;", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline);
             Regex reg_include = new Regex(@"\#include\s*\""\s*(?<name>[^\r\n]+)\s*\""\s*(\r|\n)+", RegexOptions.Compiled | RegexOptions.IgnoreCase);
@@ -74,7 +74,7 @@ namespace OpenTKMinecraft.Components
             int ptr = GL.CreateShader((ShaderType)type);
             string code = File.ReadAllText(path);
 
-            code = Regex.Replace(code, @"\#version\s*([0-9]{3}|xxx)\s*(\r|\n)+", $"#version {Program.GL_VERSION_MAJ}{Program.GL_VERSION_MIN}0", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+            code = Regex.Replace(code, @"\#version\s*([0-9]{3}|xxx)\s*(\r|\n)+", $"#version {MainProgram.GL_VERSION_MAJ}{MainProgram.GL_VERSION_MIN}0", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
             while (reg_include.IsMatch(code))
                 code = reg_include.Replace(code, m =>

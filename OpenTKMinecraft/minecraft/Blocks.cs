@@ -50,7 +50,7 @@ namespace OpenTKMinecraft.Minecraft
                 ("resources/sand-ambt.png", TextureType.AmbientOcclusion),
                 ("resources/sand-spec.png", TextureType.Specular),
                 ("resources/sand-norm.png", TextureType.Normal)
-            ) {  Gravity = true },
+            ) { Gravity = true },
             [BlockMaterial.Diamond] = new BlockInfo("Diamond",
                 ("resources/diamond-diff.png", TextureType.Diffuse),
                 ("resources/diamond-disp.png", TextureType.Displacement),

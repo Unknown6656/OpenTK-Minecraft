@@ -40,7 +40,7 @@ namespace OpenTKMinecraft
 
 
         public MainWindow(string[] args)
-            : base(1920, 1080, new GraphicsMode(new ColorFormat(32, 32, 32, 32), 32, 0, 4), nameof(MainWindow), GameWindowFlags.Default, DisplayDevice.Default, Program.GL_VERSION_MAJ, Program.GL_VERSION_MIN, GraphicsContextFlags.ForwardCompatible)
+            : base(1920, 1080, new GraphicsMode(new ColorFormat(32, 32, 32, 32), 32, 0, 4), nameof(MainWindow), GameWindowFlags.Default, DisplayDevice.Default, MainProgram.GL_VERSION_MAJ, MainProgram.GL_VERSION_MIN, GraphicsContextFlags.ForwardCompatible)
         {
             Arguments = args;
             MouseSensitivityFactor = 2;
@@ -50,7 +50,7 @@ namespace OpenTKMinecraft
 
         protected override void OnLoad(EventArgs e)
         {
-            Program.spscreen.Text = ("Loading Shaders ...", "");
+            MainProgram.spscreen.Text = ("Loading Shaders ...", "");
 
             Closed += (s, a) => Exit();
 
@@ -85,6 +85,8 @@ namespace OpenTKMinecraft
                 (ShaderProgramType.FragmentShader, "shaders/hud.frag")
             ));
 
+            TextureSet.InitKnownMaterialTexures(Scene.Object.Program);
+
             Scene.Object.AddLight(Light.CreateDirectionalLight(new Vector3(-1, -1, 0), Color.WhiteSmoke));
             Scene.Object.AddLight(Light.CreatePointLight(new Vector3(0, 0, 2), Color.Wheat, 10));
 
@@ -95,16 +97,16 @@ namespace OpenTKMinecraft
             VSync = VSyncMode.Off;
             WindowState = WindowState.Maximized;
 
-            Program.spscreen.Text = ("Finished.", "");
+            MainProgram.spscreen.Text = ("Finished.", "");
             Thread.Sleep(500);
-            Program.spscreen.Close();
+            MainProgram.spscreen.Close();
 
             ShowHelp();
         }
 
         internal void BuildScene()
         {
-            Program.spscreen.Text = ("Loading World ...", "Building scene ...");
+            MainProgram.spscreen.Text = ("Loading World ...", "Building scene ...");
 
             World[0, 15, 0].Material = BlockMaterial.__DEBUG__;
 
@@ -113,7 +115,7 @@ namespace OpenTKMinecraft
                     if ((i == 0) || (i == 3) || (j == 0) || (j == 3))
                         World[1 - i, j + 1, 0].Material = ((i ^ j) & 1) != 0 ? BlockMaterial.Stone : BlockMaterial.Diamond;
 
-            int side = 6; // 9
+            int side = 9;
 
             for (int i = -side; i <= side; ++i)
                 for (int j = -side; j <= side; ++j)

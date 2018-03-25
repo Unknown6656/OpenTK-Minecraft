@@ -39,6 +39,7 @@ namespace OpenTKMinecraft.Minecraft
         private T ChunkFunction<T>(long x, long y, long z, Func<Chunk, long, long, long, T> func)
         {
             (long cx, long cy, long cz, long _x, long _y, long _z) = (x / CHUNK_SIZE, y / CHUNK_SIZE, z / CHUNK_SIZE, x % CHUNK_SIZE, y % CHUNK_SIZE, z % CHUNK_SIZE);
+            bool dirty = false;
             Chunk c;
 
             _x = (_x + CHUNK_SIZE) % CHUNK_SIZE;
@@ -52,8 +53,7 @@ namespace OpenTKMinecraft.Minecraft
             if (!Chunks.ContainsKey((cx, cy, cz)))
             {
                 Chunks[(cx, cy, cz)] = c = new SparseChunk(this, cx, cy, cz);
-
-                _chunks = Chunks.Values.ToArray();
+                dirty = true;
             }
             else
                 c = Chunks[(cx, cy, cz)];
@@ -66,12 +66,19 @@ namespace OpenTKMinecraft.Minecraft
 
             if ((cnt1 < CHUNK_SWITCH_COUNT) && (cnt2 >= CHUNK_SWITCH_COUNT))
             {
-                // todo : switch to dense
+                (c as SparseChunk)?.TransferTo(Chunks[(cx, cy, cz)] = new DenseChunk(this, cx, cy, cz));
+
+                dirty = true;
             }
             else if ((cnt1 >= CHUNK_SWITCH_COUNT) && (cnt2 < CHUNK_SWITCH_COUNT))
             {
-                // todo : switch to sparse
+                (c as DenseChunk)?.TransferTo(Chunks[(cx, cy, cz)] = new SparseChunk(this, cx, cy, cz));
+
+                dirty = true;
             }
+
+            if (dirty)
+                _chunks = Chunks.Values.ToArray();
 
             return res;
         }
@@ -134,20 +141,20 @@ namespace OpenTKMinecraft.Minecraft
         , IRenderable
         , IDisposable
     {
-        public const int CHUNK_SWITCH_COUNT = 128;
+        public const int CHUNK_SWITCH_COUNT = 64;
         public const long CHUNK_SIZE = 16;
 
+        public int BlockCount { get; private set; }
         public World World { get; }
         public long XIndex { get; }
         public long YIndex { get; }
         public long ZIndex { get; }
-        public int BlockCount { get; private set; }
 
         public RenderableBlock this[long xloc, long yloc, long zloc]
         {
             internal set
             {
-                RenderableBlock old = GetBlock(xloc, yloc, zloc);
+                RenderableBlock old = GetBlock(xloc, yloc, zloc, true);
 
                 if (old is null && value != null)
                     ++BlockCount;
@@ -171,7 +178,7 @@ namespace OpenTKMinecraft.Minecraft
 
         protected abstract void SetBlock(long xloc, long yloc, long zloc, RenderableBlock b);
 
-        protected abstract RenderableBlock GetBlock(long xloc, long yloc, long zloc);
+        protected abstract RenderableBlock GetBlock(long xloc, long yloc, long zloc, bool retnull = false);
 
         public abstract void Update(double time, double delta);
 
@@ -239,15 +246,25 @@ namespace OpenTKMinecraft.Minecraft
 
         protected override void SetBlock(long xloc, long yloc, long zloc, RenderableBlock b) => _blocks[(xloc, yloc, zloc)] = b;
 
-        protected override RenderableBlock GetBlock(long xloc, long yloc, long zloc)
+        protected override RenderableBlock GetBlock(long xloc, long yloc, long zloc, bool retnull = false)
         {
             (long, long, long) pos = (xloc, yloc, zloc);
             RenderableBlock b = _blocks.ContainsKey(pos) ? _blocks[pos] : null;
 
             if (b is null)
-                return _blocks[pos] = GetDefaultBlock(xloc, yloc, zloc);
+                return retnull ? null : this[xloc, yloc, zloc] = GetDefaultBlock(xloc, yloc, zloc);
             else
                 return b;
+        }
+
+        internal void TransferTo(Chunk chunk)
+        {
+            foreach (var kvp in _blocks)
+            {
+                (long x, long y, long z) = kvp.Key;
+
+                chunk[x, y, z] = kvp.Value;
+            }
         }
     }
 
@@ -291,14 +308,23 @@ namespace OpenTKMinecraft.Minecraft
 
         protected override void SetBlock(long xloc, long yloc, long zloc, RenderableBlock b) => Blocks[xloc, yloc, zloc] = b;
 
-        protected override RenderableBlock GetBlock(long xloc, long yloc, long zloc)
+        protected override RenderableBlock GetBlock(long xloc, long yloc, long zloc, bool retnull = false)
         {
-            ref var b = ref Blocks[xloc, yloc, zloc];
+            RenderableBlock b = Blocks[xloc, yloc, zloc];
 
             if (b is null)
-                b = GetDefaultBlock(xloc, yloc, zloc);
+                return retnull ? null : this[xloc, yloc, zloc] = GetDefaultBlock(xloc, yloc, zloc);
 
             return b;
+        }
+
+        internal void TransferTo(Chunk chunk)
+        {
+            for (int x = 0; x < CHUNK_SIZE; ++x)
+                for (int z = 0; z < CHUNK_SIZE; ++z)
+                    for (int y = 0; y < CHUNK_SIZE; ++y)
+                        if (Blocks[x, y, z] is RenderableBlock b)
+                            chunk[x, y, z] = b;
         }
     }
 

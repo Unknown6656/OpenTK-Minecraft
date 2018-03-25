@@ -68,6 +68,7 @@ namespace OpenTKMinecraft.Components
         {
             Program.spscreen.Subtitle = $"Compiling shader set '{Name}' ...\r\n{path} ({type})";
 
+            Regex reg_exprbody = new Regex(@"\)\s*\->(?<expr>[^\;]+?)\;", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline);
             Regex reg_include = new Regex(@"\#include\s*\""\s*(?<name>[^\r\n]+)\s*\""\s*(\r|\n)+", RegexOptions.Compiled | RegexOptions.IgnoreCase);
             Regex reg_if = new Regex(@"\#if\s+(?<condition>[^\r\n\#]+)(\r|\n)+(?<code>[^\#]+)(\r|\n)+\#endif\s*(\r|\n)+", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline);
             int ptr = GL.CreateShader((ShaderType)type);
@@ -110,6 +111,8 @@ namespace OpenTKMinecraft.Components
 
                     return cond_met ? '\n' + content + '\n' : "";
                 });
+
+            code = reg_exprbody.Replace(code, m => $"){{return ({m.Groups["expr"]}); }}");
 
             GL.ShaderSource(ptr, code);
             GL.CompileShader(ptr);

@@ -31,6 +31,7 @@ namespace OpenTKMinecraft
 
         public float MouseSensitivityFactor { set; get; } = 1;
         public bool IsPaused { private set; get; }
+        public double PausedTime { private set; get; }
         public double Time { private set; get; }
         public string[] Arguments { get; }
 
@@ -178,20 +179,23 @@ namespace OpenTKMinecraft
             HandleInput();
 
             if (IsPaused)
+                PausedTime += e.Time;
+            else
+                Time += e.Time;
+
+            HUD.Update(Time + PausedTime, e.Time);
+
+            if (IsPaused)
                 return;
 
-            Time += e.Time;
-
             Scene.Object.Lights[1].Position = Matrix3.CreateRotationY((float)Time) * new Vector3(0, 2, 4);
-
-            HUD.Update(Time, e.Time);
             Scene.Update(Time, e.Time, (float)Width / Height);
         }
 
         protected override void OnRenderFrame(FrameEventArgs e)
         {
             Scene.Render(Time, Width, Height);
-            HUD.Render(Time, Width, Height);
+            HUD.Render(Time + PausedTime, Width, Height);
 
             SwapBuffers();
         }

@@ -2,12 +2,9 @@
 using System.Drawing.Text;
 using System.Threading;
 using System.Drawing;
-using System.Linq;
-using System.Text;
 using System;
 
 using OpenTK.Graphics.OpenGL4;
-using OpenTK.Graphics;
 using OpenTK;
 
 using OpenTKMinecraft.Native;
@@ -18,7 +15,6 @@ namespace OpenTKMinecraft.Components
 {
     using static SHADER_BIND_LOCATIONS;
     using static Math;
-    using OpenTKMinecraft.Properties;
 
     public unsafe sealed class HUD
         : IVisuallyUpdatable
@@ -27,7 +23,7 @@ namespace OpenTKMinecraft.Components
         , IShaderTarget
     {
         private static readonly Font _fontfg = new Font("Consolas", 16, FontStyle.Bold, GraphicsUnit.Point);
-        private static readonly Pen _penpausedfg = new Pen(Color.FromArgb(0x7f808080), 3);
+        private static readonly Font _bigfontfg = new Font("Purista", 48, FontStyle.Bold, GraphicsUnit.Point);
         private static readonly Pen _penfg = new Pen(Color.WhiteSmoke, 3);
         private static readonly Vector4[] _vertices = new[]
         {
@@ -83,13 +79,19 @@ namespace OpenTKMinecraft.Components
                 {
                     HUDData _dat = Data;
 
-                    if (((_dat.Width > 0) || (_dat.Height > 0)) && !_dat.Paused)
+                    if ((_dat.Width > 0) || (_dat.Height > 0))
                     {
                         Bitmap bmp = new Bitmap(_dat.Width, _dat.Height, SDI.PixelFormat.Format32bppPArgb);
-                        Pen pen = _dat.Paused ? _penpausedfg : _penfg;
 
                         using (Graphics g = Graphics.FromImage(bmp))
                         {
+                            void DrawCenteredString(string s, Font f, Brush b, float x, float y)
+                            {
+                                SizeF sz = g.MeasureString(s, f);
+
+                                g.DrawString(s, f, b, x - sz.Width / 2, y - sz.Height / 2);
+                            }
+
                             g.TextRenderingHint = TextRenderingHint.ClearTypeGridFit;
                             g.SmoothingMode = SmoothingMode.HighQuality;
                             g.CompositingMode = CompositingMode.SourceOver;
@@ -103,20 +105,17 @@ namespace OpenTKMinecraft.Components
                             const int crosshairsz = 15;
                             const int circlesz = 40;
 
-                            g.DrawLine(pen, w2 - crosshairsz, h2, w2 + crosshairsz, h2);
-                            g.DrawLine(pen, w2, h2 - crosshairsz, w2, h2 + crosshairsz);
-                            g.DrawEllipse(pen, w2 - circlesz, h2 - circlesz, circlesz * 2, circlesz * 2);
-                            g.DrawLine(pen, w2 - crosshairsz - circlesz, h2, w2 - circlesz, h2);
-                            g.DrawLine(pen, w2 + crosshairsz + circlesz, h2, w2 + circlesz, h2);
-                            g.DrawLine(pen, w2, h2 - crosshairsz - circlesz, w2, h2 - circlesz);
-                            g.DrawLine(pen, w2, h2 + crosshairsz + circlesz, w2, h2 + circlesz);
-
-                            string str_h = $"{_dat.HDirection * 180 / PI:F2}°";
-                            string str_v = $"{_dat.VDirection * 90,6:F2}°";
+                            g.DrawLine(_penfg, w2 - crosshairsz, h2, w2 + crosshairsz, h2);
+                            g.DrawLine(_penfg, w2, h2 - crosshairsz, w2, h2 + crosshairsz);
+                            g.DrawEllipse(_penfg, w2 - circlesz, h2 - circlesz, circlesz * 2, circlesz * 2);
+                            g.DrawLine(_penfg, w2 - crosshairsz - circlesz, h2, w2 - circlesz, h2);
+                            g.DrawLine(_penfg, w2 + crosshairsz + circlesz, h2, w2 + circlesz, h2);
+                            g.DrawLine(_penfg, w2, h2 - crosshairsz - circlesz, w2, h2 - circlesz);
+                            g.DrawLine(_penfg, w2, h2 + crosshairsz + circlesz, w2, h2 + circlesz);
 
                             g.DrawString($"[{_dat.Position.X:F2}, {_dat.Position.Y:F2}, {_dat.Position.Z:F2}]", _fontfg, Brushes.WhiteSmoke, 20, 20);
-                            g.DrawString(str_h, _fontfg, Brushes.WhiteSmoke, w2 - g.MeasureString(str_h, _fontfg).Width / 2, 20);
-                            g.DrawString(str_v, _fontfg, Brushes.WhiteSmoke, 20, h2);
+                            DrawCenteredString($"{_dat.HDirection * 180 / PI:F2}°", _fontfg, Brushes.WhiteSmoke, w2, 30);
+                            g.DrawString($"{_dat.VDirection * 90,6:F2}°", _fontfg, Brushes.WhiteSmoke, 20, h2);
 
                             const float bardist = 20;
 
@@ -131,8 +130,8 @@ namespace OpenTKMinecraft.Components
 
                                     if ((yoffs >= bardist) && (yoffs < h))
                                     {
-                                        g.DrawLine(pen, 0, yoffs, len, yoffs);
-                                        g.DrawLine(pen, w - len, yoffs, w, yoffs);
+                                        g.DrawLine(_penfg, 0, yoffs, len, yoffs);
+                                        g.DrawLine(_penfg, w - len, yoffs, w, yoffs);
                                     }
                                 }
                             }
@@ -149,14 +148,19 @@ namespace OpenTKMinecraft.Components
 
                                     if (_x > bardist)
                                     {
-                                        g.DrawLine(pen, _x, 0, _x, len);
-                                        g.DrawLine(pen, _x, h - len, _x, h);
+                                        g.DrawLine(_penfg, _x, 0, _x, len);
+                                        g.DrawLine(_penfg, _x, h - len, _x, h);
                                     }
                                 }
                             }
 
                             //if (_dat.Anaglyph)
                             //    g.DrawImage(Resources.anaglyph, 0, 0);
+
+                            if (_dat.Paused)
+                            {
+                                DrawCenteredString("PAUSED", _bigfontfg, Brushes.BurlyWood, w2, 80);
+                            }
                         }
 
                         LastHUD = bmp;
@@ -189,6 +193,7 @@ namespace OpenTKMinecraft.Components
                 Time = time,
                 Delta = delta,
                 Paused = Window.IsPaused,
+                UseEffect = Window.Scene.UsePostEffect,
                 HDirection = cam.HorizontalAngle,
                 VDirection = cam.VerticalAngle,
                 Position = cam.Position,
@@ -202,6 +207,9 @@ namespace OpenTKMinecraft.Components
                 return;
 
             Program.Use();
+            Update(time, 0);
+
+            HUDData _dat = Data;
 
             // GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
             GL.Enable(EnableCap.Blend);
@@ -213,7 +221,7 @@ namespace OpenTKMinecraft.Components
             GL.VertexAttrib1(WINDOW_TIME, time);
             GL.Uniform1(WINDOW_WIDTH, width);
             GL.Uniform1(WINDOW_HEIGHT, height);
-            GL.Uniform1(WINDOW_PAUSED, Window.IsPaused ? 1 : 0);
+            GL.Uniform1(WINDOW_PAUSED, _dat.Paused && _dat.UseEffect ? 1 : 0);
 
             if (LastHUD is Bitmap b)
             {
@@ -275,5 +283,6 @@ namespace OpenTKMinecraft.Components
         public Vector3 Position { get; set; }
         public double VDirection { get; set; }
         public double HDirection { get; set; }
+        public bool UseEffect { get; set; }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System.Runtime.ExceptionServices;
+using System.Text.RegularExpressions;
 using System.Diagnostics;
 using System.Reflection;
 using System.Text;
@@ -6,7 +7,6 @@ using System.IO;
 using System;
 
 using OpenTK.Graphics.OpenGL4;
-using System.Text.RegularExpressions;
 
 namespace OpenTKMinecraft
 {
@@ -30,9 +30,10 @@ namespace OpenTKMinecraft
 
             if (!Directory.Exists(TEMP_DIR))
                 Directory.CreateDirectory(TEMP_DIR);
-
+#if !DEBUG
             try
             {
+#endif
                 spscreen.Show();
                 spscreen.Text = ("Initializing ...", "");
 
@@ -60,6 +61,7 @@ namespace OpenTKMinecraft
                     else
                         win.Run(200);
                 }
+#if !DEBUG
             }
             catch (Exception ex)
             {
@@ -79,7 +81,7 @@ namespace OpenTKMinecraft
 
                 Console.WriteLine(sb.ToString());
             }
-
+#endif
             if (Debugger.IsAttached && (ret != 0))
             {
                 Console.WriteLine("Press any key to exit ...");

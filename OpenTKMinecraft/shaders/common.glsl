@@ -9,9 +9,20 @@ float atan2(in float y, in float x)
     return mix(PI / 2.0 - atan(x, y), atan(y, x), s);
 }
 
-float clamp(float value, float min, float max)
+float clamp(float value, float min, float max) -> value < min ? min : value > max ? max : value;
+
+vec2 lerp(vec2 v1, vec2 v2, float fac)
 {
-    return value < min ? min : value > max ? max : value;
+    fac = clamp(fac, 0, 1);
+
+    return (1 - fac) * v1 + fac * v2;
+}
+
+vec3 lerp(vec3 v1, vec3 v2, float fac)
+{
+    fac = clamp(fac, 0, 1);
+
+    return (1 - fac) * v1 + fac * v2;
 }
 
 vec4 lerp(vec4 v1, vec4 v2, float fac)
@@ -21,19 +32,10 @@ vec4 lerp(vec4 v1, vec4 v2, float fac)
     return (1 - fac) * v1 + fac * v2;
 }
 
-float map(float value, float l1, float h1, float l2, float h2)
-{
-    return l2 + (value - l1) * (h2 - l2) / (h1 - l1);
-}
+float map(float value, float l1, float h1, float l2, float h2) -> l2 + (value - l1) * (h2 - l2) / (h1 - l1);
 
-vec3 grayscale(vec3 col)
-{
-    float gray = dot(col, vec3(0.299, 0.587, 0.114));
-    
-    return vec3(gray);
-}
+vec3 grayscale(vec3 col) -> vec3(dot(col, vec3(0.299, 0.587, 0.114)));
 
-vec4 grayscale(vec4 col)
-{
-    return vec4(grayscale(col.rgb), col.a);
-}
+vec4 grayscale(vec4 col) -> vec4(grayscale(col.rgb), col.a);
+
+float rand(vec2 co) -> fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);

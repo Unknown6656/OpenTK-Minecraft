@@ -25,18 +25,8 @@ namespace OpenTKMinecraft.Minecraft
 
         public RenderableBlock this[long x, long y, long z]
         {
-            get
-            {
-                (long cx, long cy, long cz, long _x, long _y, long _z) = UpdateChunk(x, y, z);
-
-                return Chunks[(cx, cy, cz)][_x, _y, _z];
-            }
-            set
-            {
-                (long cx, long cy, long cz, long _x, long _y, long _z) = UpdateChunk(x, y, z);
-
-                Chunks[(cx, cy, cz)][_x, _y, _z] = value;
-            }
+            get => ChunkFunction(x, y, z, (c, _x, _y, _z) => c[_x, _y, _z]);
+            set => ChunkFunction(x, y, z, (c, _x, _y, _z) => c[_x, _y, _z] = value);
         }
 
 
@@ -46,9 +36,10 @@ namespace OpenTKMinecraft.Minecraft
             Chunks = new Dictionary<(long, long, long), Chunk>();
         }
 
-        private (long, long, long, long, long, long) UpdateChunk(long x, long y, long z)
+        private T ChunkFunction<T>(long x, long y, long z, Func<Chunk, long, long, long, T> func)
         {
             (long cx, long cy, long cz, long _x, long _y, long _z) = (x / CHUNK_SIZE, y / CHUNK_SIZE, z / CHUNK_SIZE, x % CHUNK_SIZE, y % CHUNK_SIZE, z % CHUNK_SIZE);
+            Chunk c;
 
             _x = (_x + CHUNK_SIZE) % CHUNK_SIZE;
             _y = (_y + CHUNK_SIZE) % CHUNK_SIZE;
@@ -60,13 +51,38 @@ namespace OpenTKMinecraft.Minecraft
 
             if (!Chunks.ContainsKey((cx, cy, cz)))
             {
-                Chunks[(cx, cy, cz)] = new Chunk(this, cx, cy, cz);
+                Chunks[(cx, cy, cz)] = c = new SparseChunk(this, cx, cy, cz);
 
                 _chunks = Chunks.Values.ToArray();
             }
+            else
+                c = Chunks[(cx, cy, cz)];
 
-            return (cx, cy, cz, _x, _y, _z);
+            int cnt1 = c.BlockCount;
+
+            T res = func(c, _x, _y, _z);
+
+            int cnt2 = c.BlockCount;
+
+            if ((cnt1 < CHUNK_SWITCH_COUNT) && (cnt2 >= CHUNK_SWITCH_COUNT))
+            {
+                // todo : switch to dense
+            }
+            else if ((cnt1 >= CHUNK_SWITCH_COUNT) && (cnt2 < CHUNK_SWITCH_COUNT))
+            {
+                // todo : switch to sparse
+            }
+
+            return res;
         }
+
+        private void ChunkFunction(long x, long y, long z, Action<Chunk, long, long, long> func) =>
+            ChunkFunction(x, y, z, (c, _x, _y, _z) =>
+            {
+                func(c, _x, _y, _z);
+
+                return false;
+            });
 
         public void Render(Camera camera, CameraRenderData data)
         {
@@ -80,12 +96,8 @@ namespace OpenTKMinecraft.Minecraft
                 c.Update(time, delta);
         }
 
-        public CustomBlock PlaceCustomBlock(long x, long y, long z, WavefrontFile m)
-        {
-            (long cx, long cy, long cz, long _x, long _y, long _z) = UpdateChunk(x, y, z);
-
-            return Chunks[(cx, cy, cz)].PlaceCustomBlock(_x, _y, _z, m);
-        }
+        public CustomBlock PlaceCustomBlock(long x, long y, long z, WavefrontFile m) =>
+            ChunkFunction(x, y, z, (c, _x, _y, _z) => c.PlaceCustomBlock(_x, _y, _z, m));
 
         public void Dispose()
         {
@@ -93,12 +105,8 @@ namespace OpenTKMinecraft.Minecraft
                 c?.Dispose();
         }
 
-        public void RemoveBlock(long x, long y, long z)
-        {
-            (long cx, long cy, long cz, long _x, long _y, long _z) = UpdateChunk(x, y, z);
-
-            Chunks[(cx, cy, cz)].RemoveBlock(_x, _y, _z);
-        }
+        public void RemoveBlock(long x, long y, long z) =>
+            ChunkFunction(x, y, z, (c, _x, _y, _z) => c.RemoveBlock(_x, _y, _z));
 
         public RenderableBlock Raymarch(Vector3 position, Vector3 direction, float maxdist = 8)
         {
@@ -121,81 +129,176 @@ namespace OpenTKMinecraft.Minecraft
         }
     }
 
-    public sealed class Chunk
+    public abstract class Chunk
         : IUpdatable
         , IRenderable
         , IDisposable
     {
+        public const int CHUNK_SWITCH_COUNT = 128;
         public const long CHUNK_SIZE = 16;
 
-        public RenderableBlock[,,] Blocks { get; }
         public World World { get; }
         public long XIndex { get; }
         public long YIndex { get; }
         public long ZIndex { get; }
+        public int BlockCount { get; private set; }
 
-        internal RenderableBlock this[long xloc, long yloc, long zloc]
+        public RenderableBlock this[long xloc, long yloc, long zloc]
         {
-            set => Blocks[xloc, yloc, zloc] = value;
-            get
+            internal set
             {
-                if (Blocks[xloc, yloc, zloc] is null)
-                    Blocks[xloc, yloc, zloc] = new MinecraftBlock(World, this, (XIndex * CHUNK_SIZE) + xloc, (YIndex * CHUNK_SIZE) + yloc, (ZIndex * CHUNK_SIZE) + zloc);
+                RenderableBlock old = GetBlock(xloc, yloc, zloc);
 
-                return Blocks[xloc, yloc, zloc];
+                if (old is null && value != null)
+                    ++BlockCount;
+                else if (old != null && value is null)
+                    --BlockCount;
+
+                SetBlock(xloc, yloc, zloc, value);
             }
+            get => GetBlock(xloc, yloc, zloc);
         }
 
 
         internal Chunk(World world, long ix, long iy, long iz)
         {
-            Blocks = new RenderableBlock[CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE];
+            BlockCount = 0;
             World = world;
             XIndex = ix;
             YIndex = iy;
             ZIndex = iz;
         }
 
-        public void Update(double time, double delta)
-        {
-            for (int x = 0; x < CHUNK_SIZE; ++x)
-                for (int z = 0; z < CHUNK_SIZE; ++z)
-                    for (int y = 0; y < CHUNK_SIZE; ++y)
-                        if (Blocks[x, y, z] is RenderableBlock b)
-                            b.Update(time, delta);
-        }
+        protected abstract void SetBlock(long xloc, long yloc, long zloc, RenderableBlock b);
 
-        public void Render(Camera camera, CameraRenderData data)
-        {
-            for (int x = 0; x < CHUNK_SIZE; ++x)
-                for (int z = 0; z < CHUNK_SIZE; ++z)
-                    for (int y = 0; y < CHUNK_SIZE; ++y)
-                        if (Blocks[x, y, z] is RenderableBlock b)
-                            b.Render(camera, data);
-        }
+        protected abstract RenderableBlock GetBlock(long xloc, long yloc, long zloc);
+
+        public abstract void Update(double time, double delta);
+
+        public abstract void Render(Camera camera, CameraRenderData data);
 
         public CustomBlock PlaceCustomBlock(long x, long y, long z, WavefrontFile m)
         {
             CustomBlock b = new CustomBlock(m, World, this, (XIndex * CHUNK_SIZE) + x, (YIndex * CHUNK_SIZE) + y, (ZIndex * CHUNK_SIZE) + z);
 
-            Blocks[x, y, z]?.Dispose();
-            Blocks[x, y, z] = b;
+            this[x, y, z]?.Dispose();
+            this[x, y, z] = b;
 
             return b;
         }
 
+        protected abstract void InternalDispose();
+
         public void Dispose()
+        {
+            InternalDispose();
+
+            BlockCount = 0;
+        }
+
+        internal MinecraftBlock GetDefaultBlock(long x, long y, long z) => new MinecraftBlock(World, this, (XIndex * CHUNK_SIZE) + x, (YIndex * CHUNK_SIZE) + y, (ZIndex * CHUNK_SIZE) + z);
+
+        internal void RemoveBlock(long x, long y, long z)
+        {
+            this[x, y, z]?.Dispose();
+            this[x, y, z] = null;
+        }
+    }
+
+    public sealed class SparseChunk
+        : Chunk
+    {
+        private readonly Dictionary<(long, long, long), RenderableBlock> _blocks = new Dictionary<(long, long, long), RenderableBlock>();
+
+
+        public SparseChunk(World world, long ix, long iy, long iz)
+            : base(world, ix, iy, iz)
+        {
+        }
+
+        protected override void InternalDispose()
+        {
+            foreach ((long, long, long) key in _blocks.Keys.ToArray())
+            {
+                _blocks[key]?.Dispose();
+                _blocks.Remove(key);
+            }
+        }
+
+        public override void Render(Camera camera, CameraRenderData data)
+        {
+            foreach (RenderableBlock b in _blocks.Values)
+                b.Render(camera, data);
+        }
+
+        public override void Update(double time, double delta)
+        {
+            foreach (RenderableBlock b in _blocks.Values)
+                b.Update(time, delta);
+        }
+
+        protected override void SetBlock(long xloc, long yloc, long zloc, RenderableBlock b) => _blocks[(xloc, yloc, zloc)] = b;
+
+        protected override RenderableBlock GetBlock(long xloc, long yloc, long zloc)
+        {
+            (long, long, long) pos = (xloc, yloc, zloc);
+            RenderableBlock b = _blocks.ContainsKey(pos) ? _blocks[pos] : null;
+
+            if (b is null)
+                return _blocks[pos] = GetDefaultBlock(xloc, yloc, zloc);
+            else
+                return b;
+        }
+    }
+
+    public sealed class DenseChunk
+        : Chunk
+    {
+        public RenderableBlock[,,] Blocks { get; }
+
+
+        public DenseChunk(World world, long ix, long iy, long iz)
+            : base(world, ix, iy, iz) => Blocks = new RenderableBlock[CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE];
+
+        public override void Update(double time, double delta)
+        {
+            for (int x = 0; x<CHUNK_SIZE; ++x)
+                for (int z = 0; z<CHUNK_SIZE; ++z)
+                    for (int y = 0; y<CHUNK_SIZE; ++y)
+                        if (Blocks[x, y, z] is RenderableBlock b)
+                            b.Update(time, delta);
+        }
+
+        public override void Render(Camera camera, CameraRenderData data)
+        {
+            for (int x = 0; x<CHUNK_SIZE; ++x)
+                for (int z = 0; z<CHUNK_SIZE; ++z)
+                    for (int y = 0; y<CHUNK_SIZE; ++y)
+                        if (Blocks[x, y, z] is RenderableBlock b)
+                            b.Render(camera, data);
+        }
+
+        protected override void InternalDispose()
         {
             for (int x = 0; x < CHUNK_SIZE; ++x)
                 for (int z = 0; z < CHUNK_SIZE; ++z)
                     for (int y = 0; y < CHUNK_SIZE; ++y)
+                    {
                         Blocks[x, y, z]?.Dispose();
+                        Blocks[x, y, z] = null;
+                    }
         }
 
-        internal void RemoveBlock(long x, long y, long z)
+        protected override void SetBlock(long xloc, long yloc, long zloc, RenderableBlock b) => Blocks[xloc, yloc, zloc] = b;
+
+        protected override RenderableBlock GetBlock(long xloc, long yloc, long zloc)
         {
-            Blocks[x, y, z].Dispose();
-            Blocks[x, y, z] = null;
+            ref var b = ref Blocks[xloc, yloc, zloc];
+
+            if (b is null)
+                b = GetDefaultBlock(xloc, yloc, zloc);
+
+            return b;
         }
     }
 

@@ -1,9 +1,7 @@
-﻿using System.Collections.Generic;
-using System.Windows.Forms;
+﻿using System.Windows.Forms;
 using System.Threading;
 using System.Drawing;
 using System.Linq;
-using System.Text;
 using System;
 
 using OpenTK.Graphics.OpenGL4;
@@ -11,9 +9,9 @@ using OpenTK.Graphics;
 using OpenTK.Input;
 using OpenTK;
 
+using OpenTKMinecraft.Components.UI;
 using OpenTKMinecraft.Components;
 using OpenTKMinecraft.Minecraft;
-using OpenTKMinecraft.Utilities;
 
 using static System.Math;
 
@@ -83,7 +81,13 @@ namespace OpenTKMinecraft
                 new[] { "HUD" },
                 (ShaderProgramType.VertexShader, "shaders/hud.vert"),
                 (ShaderProgramType.FragmentShader, "shaders/hud.frag")
-            ));
+            ))
+            {
+                PauseScreen = new HUDWindow(null)
+                {
+                    // todo ?
+                }
+            };
 
             MainProgram.spscreen.Text = ("Intializing textures ...", "");
             TextureSet.InitKnownMaterialTexures(Scene.Object.Program);
@@ -175,6 +179,12 @@ namespace OpenTKMinecraft
             GL.Viewport(0, 0, Width, Height);
 
             Scene.OnWindowResize(this, e);
+
+            if (HUD.PauseScreen is HUDControl c)
+            {
+                c.CenterX = Width / 2f;
+                c.CenterY = Height / 2f;
+            }
         }
 
         protected override void OnUpdateFrame(FrameEventArgs e)

@@ -1,4 +1,5 @@
-﻿using System.Drawing.Drawing2D;
+﻿using System.Collections.Generic;
+using System.Drawing.Drawing2D;
 using System.Drawing.Text;
 using System.Threading;
 using System.Drawing;
@@ -7,6 +8,7 @@ using System;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK;
 
+using OpenTKMinecraft.Components.UI;
 using OpenTKMinecraft.Native;
 
 using SDI = System.Drawing.Imaging;
@@ -39,6 +41,7 @@ namespace OpenTKMinecraft.Components
         private bool _disposed;
 
         public int RenderedGDIHUDTextureID { get; private set; }
+        public HUDControl PauseScreen { set; get; }
         public Bitmap LastHUD { get; private set; }
         public HUDData Data { get; private set; }
         public bool UseHUD { get; set; } = true;
@@ -159,7 +162,9 @@ namespace OpenTKMinecraft.Components
 
                             if (_dat.Paused)
                             {
-                                DrawCenteredString("PAUSED", _bigfontfg, Brushes.DarkRed, w2, 80);
+                                DrawCenteredString("PAUSED", _bigfontfg, Brushes.Red, w2, 80);
+
+                                PauseScreen?.Render(g, default); // TODO
                             }
                         }
 
@@ -284,5 +289,12 @@ namespace OpenTKMinecraft.Components
         public double VDirection { get; set; }
         public double HDirection { get; set; }
         public bool UseEffect { get; set; }
+    }
+
+    public struct HUDMouseData
+    {
+        public float X { set; get; }
+        public float Y { set; get; }
+        public bool Pressed { set; get; }
     }
 }

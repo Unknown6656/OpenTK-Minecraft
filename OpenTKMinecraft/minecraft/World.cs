@@ -234,7 +234,7 @@ namespace OpenTKMinecraft.Minecraft
 
         public override void Render(Camera camera, CameraRenderData data)
         {
-            foreach (RenderableBlock b in _blocks.Values)
+            foreach (RenderableBlock b in _blocks.Values.ToArray())
                 b.Render(camera, data);
         }
 
@@ -353,12 +353,6 @@ namespace OpenTKMinecraft.Minecraft
 
                 BlockInfo nfo = BlockInfo.Blocks[_mat = value];
 
-                ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                ////   THIS IS THE BUG'S LOCATION
-                // changing 'Texture.UpdateTexture(false, value, nfo.Textures);'
-                //       to 'Texture.UpdateTexture(true, value, nfo.Textures);'
-                // will fix it, but will increase scene build time dramatically
-                ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                 Texture.UpdateTexture(false, value, nfo.Textures);
 
                 if (!IsSolid)

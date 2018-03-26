@@ -1,17 +1,21 @@
 ﻿using System.Collections.Generic;
+using System.Windows.Forms;
 using System.Drawing;
 using System.Linq;
-using System.Text;
 using System;
-
 
 namespace OpenTKMinecraft.Components.UI
 {
-    using static System.Math;
+    using static Math;
 
 
-    internal interface IHUDClickable
+    public interface IHUDClickable
     {
+    }
+
+    public interface IHUDPaddable
+    {
+        float Padding { set; get; }
     }
 
     public abstract class HUDControl
@@ -19,6 +23,9 @@ namespace OpenTKMinecraft.Components.UI
         private float _cx, _cy, _w, _h;
         private HUDControl _par;
         private bool _press;
+
+        public event EventHandler<float> WidthChanged;
+        public event EventHandler<float> HeightChanged;
 
 
         public List<HUDControl> Childern { get; } = new List<HUDControl>();
@@ -85,6 +92,20 @@ namespace OpenTKMinecraft.Components.UI
             get => _par;
         }
 
+        // [Obsolete("Use `CenterY` instead")]
+        public float Top
+        {
+            set => CenterY = value + (Height / 2);
+            get => CenterY - (Height / 2);
+        }
+
+        // [Obsolete("Use `CenterX` instead")]
+        public float Left
+        {
+            set => CenterX = value + (Width / 2);
+            get => CenterX - (Width / 2);
+        }
+
         public float AbsoluteX => CenterX - (Width / 2) + (Parent?.AbsoluteX ?? 0f);
 
         public float AbsoluteY => CenterY - (Height / 2) + (Parent?.AbsoluteY ?? 0f);
@@ -103,19 +124,25 @@ namespace OpenTKMinecraft.Components.UI
 
         public float Height
         {
-            set => _h = Min(Max(value, 10), Parent?.Width ?? float.MaxValue);
+            set
+            {
+                _h = Min(Max(value, 10), Parent?.Width ?? float.MaxValue);
+
+                HeightChanged?.Invoke(this, Height);
+            }
             get => _h;
         }
 
         public float Width
         {
-            set => _w = Min(Max(value, 10), Parent?.Width ?? float.MaxValue);
+            set
+            {
+                _w = Min(Max(value, 10), Parent?.Width ?? float.MaxValue);
+
+                WidthChanged?.Invoke(this, Width);
+            }
             get => _w;
         }
-
-        public float Left => CenterX - Width / 2;
-
-        public float Top => CenterY - Height / 2;
 
 
         public HUDControl(HUDControl parent)
@@ -150,6 +177,12 @@ namespace OpenTKMinecraft.Components.UI
         public bool Contains(float absx, float absy) => RectangleF.Contains(absx, absy);
 
         protected abstract void OnRender(Graphics g, bool mousedown, bool mousehover);
+
+        protected void RenderBoundingBox(Graphics g, Color bg, Color fg)
+        {
+            g.FillRectangle(new SolidBrush(bg), RectangleF);
+            g.DrawRectangle(new Pen(fg), AbsoluteX - 1, AbsoluteY - 1, Width + 2, Height + 2);
+        }
 
         protected virtual void OnClick()
         {
@@ -204,8 +237,47 @@ namespace OpenTKMinecraft.Components.UI
             : base(parent) => _font = new Font("Consolas", 14, FontStyle.Regular, GraphicsUnit.Point);
     }
 
+    public class HUDPanel
+        : HUDControl
+        , IHUDPaddable
+    {
+        private float _pad;
+
+        public float Padding
+        {
+            set => _pad = Max(0, Min(value, Max(Height / 2, Width / 2)));
+            get => _pad;
+        }
+
+
+        public HUDPanel(HUDControl parent)
+            : base(parent)
+        {
+        }
+
+        protected override void OnRender(Graphics g, bool mousedown, bool mousehover) => RenderBoundingBox(g, BackgroundColor, ForegroundColor);
+
+        public T AddFill<T>(T control, float center_y)
+            where T : HUDControl
+        {
+            if (control != null)
+            {
+                if (!Childern.Contains(control))
+                    Childern.Add(control);
+
+                control.Parent = this;
+                control.CenterY = center_y;
+                control.CenterX = Width / 2;
+                control.Width = Width - (2 * Padding);
+            }
+
+            return control;
+        }
+    }
+
     public class HUDWindow
         : HUDTextualControl
+        , IHUDPaddable
     {
         private float _pad;
 
@@ -223,8 +295,7 @@ namespace OpenTKMinecraft.Components.UI
 
         protected override void OnRender(Graphics g, bool mousedown, bool mousehover)
         {
-            g.FillRectangle(new SolidBrush(BackgroundColor), RectangleF);
-            g.DrawRectangle(new Pen(ForegroundColor), AbsoluteX - 1, AbsoluteY - 1, Width + 2, Height + 2);
+            RenderBoundingBox(g, BackgroundColor, ForegroundColor);
 
             if (Text is string s)
             {
@@ -289,8 +360,7 @@ namespace OpenTKMinecraft.Components.UI
             Color bg = IsEnabled ? mousedown ? PressedBackgroundColor : mousehover ? HoveredBackgroundColor : BackgroundColor : DisabledBackgroundColor;
             Color fg = IsEnabled ? ForegroundColor : DisabledForegroundColor;
 
-            g.FillRectangle(new SolidBrush(bg), RectangleF);
-            g.DrawRectangle(new Pen(fg), Rectangle);
+            RenderBoundingBox(g, bg, fg);
 
             if (Text is string s)
             {
@@ -348,6 +418,133 @@ namespace OpenTKMinecraft.Components.UI
                 IsChecked ^= true;
                 StateChanged?.Invoke(this, IsChecked);
             }
+        }
+    }
+
+    public class HUDOptionbox
+        : HUDTextualControl
+    {
+        private string[] _opt = new string[0];
+        private bool _enb;
+        private int _sel;
+
+        
+        public bool IsEnabled
+        {
+            set
+            {
+                _enb = value;
+
+                foreach (HUDControl c in Childern)
+                    if (c is HUDCheckbox cb)
+                        cb.IsEnabled = value;
+            }
+            get => _enb;
+        }
+
+        public string[] Options
+        {
+            set
+            {
+                _opt = (from s in value ?? new string[0]
+                        where s != null
+                        select s.Trim()).ToArray();
+
+                UpdateControls();
+            }
+            get => _opt;
+        }
+
+        public int SelectedIndex
+        {
+            set
+            {
+                if ((_sel >= 0) && (_sel < _opt.Length))
+                    _sel = value;
+            }
+            get => _sel;
+        }
+
+        public string SelectedOption => Options[SelectedIndex];
+
+
+        public event EventHandler<int> SelectedIndexChanged;
+
+
+        public HUDOptionbox(HUDControl parent)
+            : base(parent)
+        {
+            Options = new string[] { "Option 1", "Option 2" };
+
+            WidthChanged += (_, __) => UpdateControls();
+        }
+
+        private void UpdateControls()
+        {
+            Childern.Clear();
+
+            float hoffs = 2;
+
+            foreach (string opt in Options)
+            {
+                Size sz = TextRenderer.MeasureText(opt, Font, new Size((int)(Width - 40), 500));
+
+                sz.Height = Max(sz.Height + 4, 36);
+
+                HUDCheckbox cb = new HUDCheckbox(this)
+                {
+                    Text = opt,
+                    Font = Font,
+                    Parent = this,
+                    Width = Width - 4,
+                    Height = sz.Height,
+                    CenterX = Width / 2,
+                    Top = hoffs,
+                    ForegroundColor = ForegroundColor,
+                    BackgroundColor = BackgroundColor
+                };
+                cb.StateChanged += ChildStateChanged;
+
+                hoffs += sz.Height + 10;
+            }
+
+            float nh = hoffs - 8;
+            float cy = CenterY - (Height / 2) + (nh / 2);
+
+            Height = nh;
+            CenterY = cy;
+        }
+
+        private void ChildStateChanged(object sender, bool e)
+        {
+            if (e)
+            {
+                int ndx = 0;
+
+                foreach (HUDControl c in Childern)
+                    if (c is HUDCheckbox cb)
+                    {
+                        if (cb != sender)
+                            cb.IsChecked = false;
+                        else
+                            _sel = ndx;
+
+                        ++ndx;
+                    }
+
+                SelectedIndexChanged?.Invoke(this, _sel);
+            }
+        }
+
+        protected override void OnRender(Graphics g, bool mousedown, bool mousehover)
+        {
+            RenderBoundingBox(g, BackgroundColor, ForegroundColor);
+
+            //foreach (HUDControl c in Childern)
+            //    if (c is HUDCheckbox cb)
+            //    {
+            //        c.CenterX = c.Width / 2;
+            //    }
         }
     }
 }

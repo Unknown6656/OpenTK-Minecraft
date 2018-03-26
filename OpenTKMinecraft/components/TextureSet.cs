@@ -122,7 +122,7 @@ namespace OpenTKMinecraft.Components
         public int TextureID { get; private set; }
 
 
-        // ~TextureSet() => Dispose();
+        ~TextureSet() => Dispose();
 
         internal TextureSet(ShaderProgram program, BlockMaterial? assoc, params (string Path, TextureType Type)[] textures)
             : base(program, 0)
@@ -149,13 +149,6 @@ namespace OpenTKMinecraft.Components
                     else
                     {
                         TextureID = KnownTextures[m].TextureID;
-
-                        //Bind();
-                        // 
-                        //GL.TexParameterI(TextureTarget.ProxyTexture2D, TextureParameterName.TextureWrapS, new[] { (int)TextureWrapMode.ClampToEdge });
-                        //GL.TexParameterI(TextureTarget.ProxyTexture2D, TextureParameterName.TextureWrapT, new[] { (int)TextureWrapMode.ClampToEdge });
-                        //GL.TexParameterI(TextureTarget.ProxyTexture2D, TextureParameterName.TextureMagFilter, new[] { (int)TextureMagFilter.Nearest });
-                        //GL.TexParameterI(TextureTarget.ProxyTexture2D, TextureParameterName.TextureMinFilter, new[] { (int)TextureMinFilter.LinearMipmapLinear });
 
                         return;
                     }
@@ -273,10 +266,10 @@ namespace OpenTKMinecraft.Components
 
             GL.CreateTextures(TextureTarget.Texture2D, 1, out int tex);
             GL.BindTexture(TextureTarget.Texture2D, tex);
-            GL.TexParameterI(TextureTarget.ProxyTexture2D, TextureParameterName.TextureWrapS, new[] { (int)TextureWrapMode.ClampToEdge });
-            GL.TexParameterI(TextureTarget.ProxyTexture2D, TextureParameterName.TextureWrapT, new[] { (int)TextureWrapMode.ClampToEdge });
-            GL.TexParameterI(TextureTarget.ProxyTexture2D, TextureParameterName.TextureMagFilter, new[] { (int)TextureMagFilter.Nearest });
-            GL.TexParameterI(TextureTarget.ProxyTexture2D, TextureParameterName.TextureMinFilter, new[] { (int)TextureMinFilter.LinearMipmapLinear });
+            GL.TexParameterI(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, new[] { (int)TextureWrapMode.ClampToEdge });
+            GL.TexParameterI(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, new[] { (int)TextureWrapMode.ClampToEdge });
+            GL.TexParameterI(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, new[] { (int)TextureMagFilter.Nearest });
+            GL.TexParameterI(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, new[] { (int)TextureMinFilter.LinearMipmapLinear });
             GL.TextureStorage2D(tex, 1, SizedInternalFormat.Rgba32f, sz, sz);
             GL.TextureSubImage2D(tex, 0, 0, 0, sz, sz, OpenTK.Graphics.OpenGL4.PixelFormat.Rgba, PixelType.Float, data);
             GL.TexImage2D(TextureTarget.Texture2D, (int)Math.Log(_size, 2), PixelInternalFormat.Rgba, sz, sz, 0, OpenTK.Graphics.OpenGL4.PixelFormat.Rgba, PixelType.Float, data);

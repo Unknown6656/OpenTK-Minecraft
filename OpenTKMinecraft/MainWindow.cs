@@ -170,6 +170,14 @@ namespace OpenTKMinecraft
                 BackgroundColor = bg,
                 ForegroundColor = fg,
             }, 400).Clicked += (s, a) => Exit();
+
+            PauseScreen.AddFill(new HUDOptionbox(null)
+            {
+                Font = fnt,
+                Height = hgt * 3,
+                BackgroundColor = bg,
+                ForegroundColor = fg,
+            }, 500);
         }
 
         internal void BuildScene()

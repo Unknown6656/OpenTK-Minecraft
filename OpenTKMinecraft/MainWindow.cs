@@ -114,6 +114,7 @@ namespace OpenTKMinecraft
             {
                 Width = 500,
                 Height = 1080,
+                Padding = 10,
                 Text = "PAUSE MENU",
                 Font = new Font("Purista", 40, FontStyle.Bold | FontStyle.Underline, GraphicsUnit.Point),
                 ForegroundColor = Color.DarkRed

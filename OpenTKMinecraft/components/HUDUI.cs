@@ -211,7 +211,7 @@ namespace OpenTKMinecraft.Components.UI
 
         public float Padding
         {
-            set => _pad = Max(0, Min(Width / 2, Max(Height / 2, value)));
+            set => _pad = Max(0, Min(value, Max(Height / 2, Width / 2)));
             get => _pad;
         }
 

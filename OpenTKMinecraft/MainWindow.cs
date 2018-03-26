@@ -170,6 +170,31 @@ namespace OpenTKMinecraft
                     Scene.UsePostEffect = false;
             };
 
+            PauseScreen.AddFill(new HUDOptionbox(null)
+            {
+                Font = fnt,
+                Height = hgt * 3,
+                BackgroundColor = bg,
+                ForegroundColor = fg,
+                Options = new[] { "Render points", "Render Lines", "Render faces" },
+                BeforeRender = c =>
+                {
+                    var o = c as HUDOptionbox;
+
+                    switch (Scene.Object.Program.PolygonMode)
+                    {
+                        case PolygonMode.Point:
+                            o.SelectedIndex = 0;
+                            break;
+                        case PolygonMode.Line:
+                            o.SelectedIndex = 1;
+                            break;
+                        case PolygonMode.Fill:
+                            o.SelectedIndex = 2;
+                            break;
+                    }
+                }
+            }, 380).SelectedIndexChanged += (_, a) => Scene.Object.Program.PolygonMode = a == 0 ? PolygonMode.Point : a == 1 ? PolygonMode.Line : PolygonMode.Fill;
             PauseScreen.AddFill(new HUDButton(null)
             {
                 Font = fnt,
@@ -177,7 +202,7 @@ namespace OpenTKMinecraft
                 Text = "Continue",
                 BackgroundColor = bg,
                 ForegroundColor = fg,
-            }, 400).Clicked += (s, a) =>
+            }, 500).Clicked += (s, a) =>
             {
                 int x = X + (Width / 2);
                 int y = Y + (Height / 2);
@@ -196,7 +221,7 @@ namespace OpenTKMinecraft
                 Text = "Help",
                 BackgroundColor = bg,
                 ForegroundColor = fg,
-            }, 450).Clicked += (s, a) => ShowHelp();
+            }, 550).Clicked += (s, a) => ShowHelp();
             PauseScreen.AddFill(new HUDButton(null)
             {
                 Font = fnt,
@@ -204,14 +229,7 @@ namespace OpenTKMinecraft
                 Text = "Exit",
                 BackgroundColor = bg,
                 ForegroundColor = fg,
-            }, 500).Clicked += (s, a) => Exit();
-            PauseScreen.AddFill(new HUDOptionbox(null)
-            {
-                Font = fnt,
-                Height = hgt * 3,
-                BackgroundColor = bg,
-                ForegroundColor = fg,
-            }, 600);
+            }, 600).Clicked += (s, a) => Exit();
         }
 
         internal void BuildScene()
@@ -338,12 +356,6 @@ namespace OpenTKMinecraft
 
                 return;
             }
-            if (kstate.IsKeyDown(Key.Number1))
-                Scene.Object.Program.PolygonMode = PolygonMode.Point;
-            if (kstate.IsKeyDown(Key.Number2))
-                Scene.Object.Program.PolygonMode = PolygonMode.Line;
-            if (kstate.IsKeyDown(Key.Number3))
-                Scene.Object.Program.PolygonMode = PolygonMode.Fill;
             if (kstate.IsKeyDown(Key.Number4))
             {
                 if (Camera.IsStereoscopic ^= true)
@@ -463,6 +475,7 @@ namespace OpenTKMinecraft
         public static void ShowHelp() => MessageBox.Show(@"
 ---------------- KEYBOARD SHORTCUTS ----------------
 [ESC] Pause
+[SHIFT][ESC] Exit
 [H] Show this help window
 [F] Save screenshot to 'framebuffer.png'
 
@@ -477,11 +490,7 @@ namespace OpenTKMinecraft
 [Q] Zoom out
 [E] Zoom in
 
-[1] Display Points
-[2] Display Lines
-[3] Display Faces
 [4] Toggle Stereoscopic display
-[5] Toggle PostProcessing effects
 [6] Toggle HUD
 [P.Up] Increase focal distance (Stereoscopic only)
 [P.Down] Decrease focal distance (Stereoscopic only)

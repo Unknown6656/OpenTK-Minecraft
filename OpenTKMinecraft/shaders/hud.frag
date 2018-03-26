@@ -31,12 +31,12 @@ void main(void)
 {
     float d = clamp(pow(length(vs_texcoord * 2 - 1), 2), 0, 1);
     vec2 coord = lerp(vs_texcoord, distort(vs_texcoord), d);
+    vec4 orgclr = texture(overlayTexture, coord);
     
     if (paused)
     {
         vec2 offs = vec2(5 / window_width, 0);
         vec4 c1 = texture(overlayTexture, coord - offs);
-        vec4 c2 = texture(overlayTexture, coord);
         vec4 c3 = texture(overlayTexture, coord + offs);
         vec2 uv = vs_texcoord;
 
@@ -45,16 +45,19 @@ void main(void)
 
         float f = tan(uv.y * window_width + vs_time * 4 + sin(uv.x) / 1000);
 
-        color = lerp(c2, vec4(
+        color = lerp(orgclr, vec4(
             c1.r,
-            c2.g,
+            orgclr.g,
             c3.b,
-            c1.a + c2.a + c3.b
+            c1.a + orgclr.a + c3.b
         ), 0.1 + d + f) * 0.65 + clamp(1 - f, 0, 1) * 0.1;
+        
+        if ((vs_texcoord.x >= vs_excl.x) && (vs_texcoord.y >= vs_excl.y) && (vs_texcoord.x <= vs_excl.z) && (vs_texcoord.y <= vs_excl.w))
+        {
+            color = lerp(color, texture(overlayTexture, vs_texcoord), 0.9);
+            color.a *= 0.8;
+        }
     }
     else
-        color = texture(overlayTexture, coord);
-
-    if ((vs_texcoord.x >= vs_excl.x) && (vs_texcoord.y >= vs_excl.y) && (vs_texcoord.x < vs_excl.z) && (vs_texcoord.y < vs_excl.w))
-        color = vec4(vs_texcoord, 0, 1);
+        color = orgclr;
 }

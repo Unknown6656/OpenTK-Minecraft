@@ -224,7 +224,7 @@ namespace OpenTKMinecraft.Components.UI
         protected override void OnRender(Graphics g, bool mousedown, bool mousehover)
         {
             g.FillRectangle(new SolidBrush(BackgroundColor), RectangleF);
-            g.DrawRectangle(new Pen(ForegroundColor), Rectangle);
+            g.DrawRectangle(new Pen(ForegroundColor), AbsoluteX - 1, AbsoluteY - 1, Width + 2, Height + 2);
 
             if (Text is string s)
             {

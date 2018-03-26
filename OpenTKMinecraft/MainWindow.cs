@@ -116,7 +116,7 @@ namespace OpenTKMinecraft
                 Height = 1080,
                 Text = "PAUSE MENU",
                 Font = new Font("Purista", 40, FontStyle.Bold | FontStyle.Underline, GraphicsUnit.Point),
-                ForegroundColor = Color.Red
+                ForegroundColor = Color.DarkRed
             };
 
             Font fnt = new Font("Purista", 24, GraphicsUnit.Point);
@@ -128,7 +128,7 @@ namespace OpenTKMinecraft
             {
                 Font = fnt,
                 Height = hgt,
-                Text = "Vertical Syncchronization",
+                Text = "Vertical Synchronization",
                 BackgroundColor = bg,
                 ForegroundColor = fg,
             }, 110).StateChanged += (s, a) => Invoke(() => VSync = a ? VSyncMode.On : VSyncMode.Off);
@@ -148,7 +148,7 @@ namespace OpenTKMinecraft
                 Text = "Continue",
                 BackgroundColor = bg,
                 ForegroundColor = fg,
-            }, 200).Clicked += (s, a) =>
+            }, 300).Clicked += (s, a) =>
             {
                 IsPaused = false;
                 System.Windows.Forms.Cursor.Position = new Point(X + (Width / 2), Y + (Height / 2));
@@ -160,7 +160,7 @@ namespace OpenTKMinecraft
                 Text = "Help",
                 BackgroundColor = bg,
                 ForegroundColor = fg,
-            }, 250).Clicked += (s, a) => ShowHelp();
+            }, 350).Clicked += (s, a) => ShowHelp();
             PauseScreen.AddFill(new HUDButton(null)
             {
                 Font = fnt,
@@ -168,7 +168,7 @@ namespace OpenTKMinecraft
                 Text = "Exit",
                 BackgroundColor = bg,
                 ForegroundColor = fg,
-            }, 300).Clicked += (s, a) => Exit();
+            }, 400).Clicked += (s, a) => Exit();
         }
 
         internal void BuildScene()
@@ -453,7 +453,6 @@ namespace OpenTKMinecraft
 [End] Derease eye separation (Stereoscopic only)
 
 [X] Cycle visual effects
-[V] Toggle VSync
 ".Trim());
     }
 }

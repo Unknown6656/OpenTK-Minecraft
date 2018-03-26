@@ -253,8 +253,13 @@ namespace OpenTKMinecraft.Components
 
                 b.UnlockBits(dat);
 
-                if (PauseScreen is HUDControl c)
-                    GL.Uniform4(HUD_EXCLUDE_EFFECT, c.AbsoluteX, c.AbsoluteY, c.Width, c.Height);
+                if (_dat.Paused && PauseScreen is HUDControl c)
+                    GL.Uniform4(HUD_EXCLUDE_EFFECT, new Vector4(
+                        (c.AbsoluteX - 1) / _dat.Width,
+                        (c.AbsoluteY - 1 ) / _dat.Height,
+                        (c.Width + 2) / _dat.Width,
+                        (c.Height + 2) / _dat.Height
+                    ));
                 else
                     GL.Uniform4(HUD_EXCLUDE_EFFECT, Vector4.Zero);
             }

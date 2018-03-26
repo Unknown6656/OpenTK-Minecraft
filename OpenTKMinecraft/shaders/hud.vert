@@ -13,10 +13,5 @@ void main(void)
     vs_time = time;
     vs_position = position.xyz;
     vs_texcoord = vec2(position.x / 2 + 0.5, 0.5 - position.y / 2);
-    vs_excl = vec4(
-        exclusion.x / window_width,
-        exclusion.y / window_height,
-        (exclusion.x + exclusion.z) / window_width,
-        (exclusion.y + exclusion.z) / window_height
-    );
+    vs_excl = vec4(exclusion.x, exclusion.y, exclusion.x + exclusion.z, exclusion.y + exclusion.w);
 }

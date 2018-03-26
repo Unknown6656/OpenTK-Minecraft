@@ -132,7 +132,7 @@ namespace OpenTKMinecraft
                 Text = "Vertical Synchronization",
                 BackgroundColor = bg,
                 ForegroundColor = fg,
-            }, 110).StateChanged += (s, a) => Invoke(() => VSync = a ? VSyncMode.On : VSyncMode.Off);
+            }, 110).StateChanged += (_, a) => Invoke(() => VSync = a ? VSyncMode.On : VSyncMode.Off);
             PauseScreen.AddFill(new HUDCheckbox(null)
             {
                 Font = fnt,
@@ -141,7 +141,11 @@ namespace OpenTKMinecraft
                 BackgroundColor = bg,
                 ForegroundColor = fg,
                 IsChecked = Scene.UsePostEffect,
-            }, 160).StateChanged += (s, a) => Invoke(() => Scene.UsePostEffect = a);
+            }, 160).StateChanged += (_, a) => Invoke(() =>
+            {
+                if (Scene.UsePostEffect = a)
+                    Camera.IsStereoscopic = false;
+            });
             PauseScreen.AddFill(new HUDButton(null)
             {
                 Font = fnt,
@@ -151,8 +155,15 @@ namespace OpenTKMinecraft
                 ForegroundColor = fg,
             }, 300).Clicked += (s, a) =>
             {
+                int x = X + (Width / 2);
+                int y = Y + (Height / 2);
+
                 IsPaused = false;
-                System.Windows.Forms.Cursor.Position = new Point(X + (Width / 2), Y + (Height / 2));
+                System.Windows.Forms.Cursor.Position = new Point(x, y);
+
+                _mousex = x;
+                _mousey = y;
+                _mousescroll = Mouse.GetState().WheelPrecise;
             };
             PauseScreen.AddFill(new HUDButton(null)
             {
@@ -170,14 +181,13 @@ namespace OpenTKMinecraft
                 BackgroundColor = bg,
                 ForegroundColor = fg,
             }, 400).Clicked += (s, a) => Exit();
-
-            PauseScreen.AddFill(new HUDOptionbox(null)
-            {
-                Font = fnt,
-                Height = hgt * 3,
-                BackgroundColor = bg,
-                ForegroundColor = fg,
-            }, 500);
+            //PauseScreen.AddFill(new HUDOptionbox(null)
+            //{
+            //    Font = fnt,
+            //    Height = hgt * 3,
+            //    BackgroundColor = bg,
+            //    ForegroundColor = fg,
+            //}, 500);
         }
 
         internal void BuildScene()
@@ -191,7 +201,7 @@ namespace OpenTKMinecraft
                     if ((i == 0) || (i == 3) || (j == 0) || (j == 3))
                         World[1 - i, j + 1, 0].Material = ((i ^ j) & 1) != 0 ? BlockMaterial.Stone : BlockMaterial.Diamond;
 
-            int side = 9;
+            int side = 10;
 
             for (int i = -side; i <= side; ++i)
                 for (int j = -side; j <= side; ++j)
@@ -215,12 +225,12 @@ namespace OpenTKMinecraft
                 for (int j = -2; j <= 2; ++j)
                     if ((i >= -1) && (i < 2) && (j >= -1) && (j < 2))
                     {
-                        World[xp + i, -1, yp + j].Material = BlockMaterial.Stone;
-                        World[xp + i, 0, yp + j].Material = BlockMaterial.Water;
-                        World[xp + i, 0, yp + j].Move(0, -.15f, 0);
+                        World[xp + i, 3, yp + j].Material = BlockMaterial.Stone;
+                        World[xp + i, 4, yp + j].Material = BlockMaterial.Water;
+                        World[xp + i, 4, yp + j].Move(0, -.15f, 0);
                     }
                     else
-                        World[xp + i, 0, yp + j].Material = BlockMaterial.Stone;
+                        World[xp + i, 4, yp + j].Material = BlockMaterial.Stone;
 
             // Scene.World.PlaceCustomBlock(4, 1, 0, WavefrontFile.FromPath("resources/center-piece.obj"));
         }
@@ -365,13 +375,6 @@ namespace OpenTKMinecraft
             {
                 if (Camera.IsStereoscopic ^= true)
                     Scene.UsePostEffect = false;
-
-                Thread.Sleep(KEYBOARD_TOGGLE_DELAY);
-            }
-            if (kstate.IsKeyDown(Key.Number5))
-            {
-                if (Scene.UsePostEffect ^= true)
-                    Camera.IsStereoscopic = false;
 
                 Thread.Sleep(KEYBOARD_TOGGLE_DELAY);
             }

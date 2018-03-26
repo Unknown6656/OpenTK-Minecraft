@@ -41,6 +41,7 @@ namespace OpenTKMinecraft.Components
         private readonly int _vertexarr, _vertexbuff, _hudtex;
         private readonly object _mutex = new object();
         private readonly Thread _paintthread;
+        private Bitmap _todisp;
         private bool _disposed;
 
         public int RenderedGDIHUDTextureID { get; private set; }
@@ -171,6 +172,7 @@ namespace OpenTKMinecraft.Components
                             }
                         }
 
+                        _todisp = LastHUD;
                         LastHUD = bmp;
                     }
                 }
@@ -262,6 +264,9 @@ namespace OpenTKMinecraft.Components
                     ));
                 else
                     GL.Uniform4(HUD_EXCLUDE_EFFECT, Vector4.Zero);
+
+                _todisp?.Dispose();
+                _todisp = null;
             }
 
             GL.BindVertexArray(_vertexarr);

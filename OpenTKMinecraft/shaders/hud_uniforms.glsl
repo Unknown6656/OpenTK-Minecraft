@@ -4,3 +4,5 @@
     layout (location = 1) in vec4 position;
     layout (location = 15) uniform vec4 exclusion;
 #endif
+
+layout (location = 16) uniform bool in_use;

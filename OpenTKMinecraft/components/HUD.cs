@@ -39,7 +39,6 @@ namespace OpenTKMinecraft.Components
             new Vector4(1, 1, 0, 1),
         };
         private readonly int _vertexarr, _vertexbuff, _hudtex;
-        private readonly object _mutex = new object();
         private readonly Thread _paintthread;
         private Bitmap _todisp;
         private bool _disposed;
@@ -82,29 +81,30 @@ namespace OpenTKMinecraft.Components
         private void PaintHUD()
         {
             while (!_disposed)
-                if (UseHUD)
+            {
+                HUDData _dat = Data;
+
+                if ((UseHUD || _dat.Paused) && ((_dat.Width > 0) || (_dat.Height > 0)))
                 {
-                    HUDData _dat = Data;
+                    Bitmap bmp = new Bitmap(_dat.Width, _dat.Height, SDI.PixelFormat.Format32bppPArgb);
 
-                    if ((_dat.Width > 0) || (_dat.Height > 0))
+                    using (Graphics g = Graphics.FromImage(bmp))
                     {
-                        Bitmap bmp = new Bitmap(_dat.Width, _dat.Height, SDI.PixelFormat.Format32bppPArgb);
-
-                        using (Graphics g = Graphics.FromImage(bmp))
+                        void DrawCenteredString(string s, Font f, Brush b, float x, float y)
                         {
-                            void DrawCenteredString(string s, Font f, Brush b, float x, float y)
-                            {
-                                SizeF sz = g.MeasureString(s, f);
+                            SizeF sz = g.MeasureString(s, f);
 
-                                g.DrawString(s, f, b, x - sz.Width / 2, y - sz.Height / 2);
-                            }
+                            g.DrawString(s, f, b, x - sz.Width / 2, y - sz.Height / 2);
+                        }
 
-                            g.TextRenderingHint = TextRenderingHint.ClearTypeGridFit;
-                            g.SmoothingMode = SmoothingMode.HighQuality;
-                            g.CompositingMode = CompositingMode.SourceOver;
-                            g.CompositingQuality = CompositingQuality.HighQuality;
-                            g.InterpolationMode = InterpolationMode.HighQualityBilinear;
+                        g.TextRenderingHint = TextRenderingHint.ClearTypeGridFit;
+                        g.SmoothingMode = SmoothingMode.HighQuality;
+                        g.CompositingMode = CompositingMode.SourceOver;
+                        g.CompositingQuality = CompositingQuality.HighQuality;
+                        g.InterpolationMode = InterpolationMode.HighQualityBilinear;
 
+                        if (UseHUD)
+                        {
                             int w = bmp.Width;
                             int h = bmp.Height;
                             float w2 = w / 2f;
@@ -163,21 +163,22 @@ namespace OpenTKMinecraft.Components
 
                             //if (_dat.Anaglyph)
                             //    g.DrawImage(Resources.anaglyph, 0, 0);
-
-                            if (_dat.Paused)
-                            {
-                                bool hover = PauseScreen?.Render(g, _dat.Mouse) ?? false;
-
-                                g.DrawImage(hover ? Resources.aero_hand : Resources.aero_arrow, _dat.Mouse.X - 15, _dat.Mouse.Y, 32, 32);
-                            }
                         }
 
-                        _todisp = LastHUD;
-                        LastHUD = bmp;
+                        if (_dat.Paused)
+                        {
+                            bool hover = PauseScreen?.Render(g, _dat.Mouse) ?? false;
+
+                            g.DrawImage(hover ? Resources.aero_hand : Resources.aero_arrow, _dat.Mouse.X - 15, _dat.Mouse.Y, 32, 32);
+                        }
                     }
+
+                    _todisp = LastHUD;
+                    LastHUD = bmp;
                 }
                 else
                     Thread.Sleep(100);
+            }
         }
 
         private void OverlayInit()
@@ -222,13 +223,13 @@ namespace OpenTKMinecraft.Components
 
         public void Render(double time, float width, float height)
         {
-            if (!UseHUD)
+            HUDData _dat = Data;
+
+            if (!UseHUD && !_dat.Paused)
                 return;
 
             Program.Use();
             Update(time, 0);
-
-            HUDData _dat = Data;
 
             // GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
             GL.Enable(EnableCap.Blend);
@@ -241,6 +242,7 @@ namespace OpenTKMinecraft.Components
             GL.Uniform1(WINDOW_WIDTH, width);
             GL.Uniform1(WINDOW_HEIGHT, height);
             GL.Uniform1(WINDOW_PAUSED, _dat.Paused && _dat.UseEffect ? 1 : 0);
+            GL.Uniform1(HUD_INUSE, UseHUD ? 1 : 0);
 
             if (LastHUD is Bitmap b)
             {
@@ -288,6 +290,12 @@ namespace OpenTKMinecraft.Components
                 GL.DeleteTexture(RenderedGDIHUDTextureID);
                 GL.DeleteVertexArray(_vertexarr);
                 GL.DeleteBuffer(_vertexbuff);
+
+                _todisp?.Dispose();
+                _todisp = null;
+
+                LastHUD?.Dispose();
+                LastHUD = null;
             }
         }
 

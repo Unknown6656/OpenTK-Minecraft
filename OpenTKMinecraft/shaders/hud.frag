@@ -29,7 +29,15 @@ vec2 distort(vec2 uv) -> distort(uv, 1);
 
 void main(void)
 {
+    if (!in_use)
+    {
+        color = texture(overlayTexture, vs_texcoord);
+
+        return;
+    }
+
     float d = clamp(pow(length(vs_texcoord * 2 - 1), 2), 0, 1);
+    bool inwindow = (vs_texcoord.x >= vs_excl.x) && (vs_texcoord.y >= vs_excl.y) && (vs_texcoord.x <= vs_excl.z) && (vs_texcoord.y <= vs_excl.w);
     vec2 coord = lerp(vs_texcoord, distort(vs_texcoord), d);
     vec4 orgclr = texture(overlayTexture, coord);
     
@@ -52,12 +60,12 @@ void main(void)
             c1.a + orgclr.a + c3.b
         ), 0.1 + d + f) * 0.65 + clamp(1 - f, 0, 1) * 0.1;
         
-        if ((vs_texcoord.x >= vs_excl.x) && (vs_texcoord.y >= vs_excl.y) && (vs_texcoord.x <= vs_excl.z) && (vs_texcoord.y <= vs_excl.w))
+        if (inwindow)
         {
             color = lerp(color, texture(overlayTexture, vs_texcoord), 0.9);
             color.a *= 0.8;
         }
     }
     else
-        color = orgclr;
+        color = inwindow ? texture(overlayTexture, vs_texcoord) : orgclr;
 }

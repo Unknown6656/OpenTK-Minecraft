@@ -31,6 +31,7 @@ namespace OpenTKMinecraft.Native
 
         public const int HUD_VERTEX_POSITION = 1;
         public const int HUD_EXCLUDE_EFFECT = 15;
+        public const int HUD_INUSE = 16;
 
         public const int POSTRENDER_VERTEX_POSITION = 1;
         public const int POSTRENDER_EDGEBLUR = 38;

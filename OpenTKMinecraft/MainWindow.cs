@@ -132,6 +132,7 @@ namespace OpenTKMinecraft
                 Text = "Vertical Synchronization",
                 BackgroundColor = bg,
                 ForegroundColor = fg,
+                BeforeRender = c => Invoke(() => (c as HUDCheckbox).IsChecked = VSync != VSyncMode.Off),
             }, 110).StateChanged += (_, a) => Invoke(() => VSync = a ? VSyncMode.On : VSyncMode.Off);
             PauseScreen.AddFill(new HUDCheckbox(null)
             {
@@ -140,12 +141,35 @@ namespace OpenTKMinecraft
                 Text = "Use post-render effects",
                 BackgroundColor = bg,
                 ForegroundColor = fg,
-                IsChecked = Scene.UsePostEffect,
+                BeforeRender = c => (c as HUDCheckbox).IsChecked = Scene.UsePostEffect,
             }, 160).StateChanged += (_, a) => Invoke(() =>
             {
                 if (Scene.UsePostEffect = a)
                     Camera.IsStereoscopic = false;
             });
+            PauseScreen.AddFill(new HUDCheckbox(null)
+            {
+                Font = fnt,
+                Height = hgt,
+                Text = "Use Head-Up-Display (HUD)",
+                BackgroundColor = bg,
+                ForegroundColor = fg,
+                BeforeRender = c => (c as HUDCheckbox).IsChecked = HUD.UseHUD,
+            }, 210).StateChanged += (_, __) => HUD.UseHUD ^= true;
+            PauseScreen.AddFill(new HUDCheckbox(null)
+            {
+                Font = fnt,
+                Height = hgt,
+                Text = "Use stereoscopic camera",
+                BackgroundColor = bg,
+                ForegroundColor = fg,
+                BeforeRender = c => (c as HUDCheckbox).IsChecked = Camera.IsStereoscopic,
+            }, 260).StateChanged += (_, __) =>
+            {
+                if (Camera.IsStereoscopic ^= true)
+                    Scene.UsePostEffect = false;
+            };
+
             PauseScreen.AddFill(new HUDButton(null)
             {
                 Font = fnt,
@@ -153,7 +177,7 @@ namespace OpenTKMinecraft
                 Text = "Continue",
                 BackgroundColor = bg,
                 ForegroundColor = fg,
-            }, 300).Clicked += (s, a) =>
+            }, 400).Clicked += (s, a) =>
             {
                 int x = X + (Width / 2);
                 int y = Y + (Height / 2);
@@ -172,7 +196,7 @@ namespace OpenTKMinecraft
                 Text = "Help",
                 BackgroundColor = bg,
                 ForegroundColor = fg,
-            }, 350).Clicked += (s, a) => ShowHelp();
+            }, 450).Clicked += (s, a) => ShowHelp();
             PauseScreen.AddFill(new HUDButton(null)
             {
                 Font = fnt,
@@ -180,14 +204,14 @@ namespace OpenTKMinecraft
                 Text = "Exit",
                 BackgroundColor = bg,
                 ForegroundColor = fg,
-            }, 400).Clicked += (s, a) => Exit();
-            //PauseScreen.AddFill(new HUDOptionbox(null)
-            //{
-            //    Font = fnt,
-            //    Height = hgt * 3,
-            //    BackgroundColor = bg,
-            //    ForegroundColor = fg,
-            //}, 500);
+            }, 500).Clicked += (s, a) => Exit();
+            PauseScreen.AddFill(new HUDOptionbox(null)
+            {
+                Font = fnt,
+                Height = hgt * 3,
+                BackgroundColor = bg,
+                ForegroundColor = fg,
+            }, 600);
         }
 
         internal void BuildScene()
@@ -314,63 +338,12 @@ namespace OpenTKMinecraft
 
                 return;
             }
-
-            if (kstate.IsKeyDown(Key.Escape))
-            {
-                if (kstate.IsKeyDown(Key.LShift) || kstate.IsKeyDown(Key.RShift))
-                    Exit();
-
-                IsPaused ^= true;
-
-                Thread.Sleep(KEYBOARD_TOGGLE_DELAY);
-
-                if (!IsPaused)
-                {
-                    _mousex = mstate.X;
-                    _mousey = mstate.Y;
-                    _mousescroll = mstate.WheelPrecise;
-                }
-
-                return;
-            }
-            else if (IsPaused)
-                return;
-
-            if (kstate.IsKeyDown(Key.ShiftLeft))
-                speed /= 10;
-            if (kstate.IsKeyDown(Key.AltLeft))
-            {
-                speed *= 3;
-
-                Scene.EdgeBlurMode = EdgeBlurMode.RadialBlur;
-            }
-            else
-                Scene.EdgeBlurMode = EdgeBlurMode.BoxBlur;
-
             if (kstate.IsKeyDown(Key.Number1))
                 Scene.Object.Program.PolygonMode = PolygonMode.Point;
             if (kstate.IsKeyDown(Key.Number2))
                 Scene.Object.Program.PolygonMode = PolygonMode.Line;
             if (kstate.IsKeyDown(Key.Number3))
                 Scene.Object.Program.PolygonMode = PolygonMode.Fill;
-            if (kstate.IsKeyDown(Key.W))
-                Camera.MoveForwards(speed);
-            if (kstate.IsKeyDown(Key.S))
-                Camera.MoveBackwards(speed);
-            if (kstate.IsKeyDown(Key.A))
-                Camera.MoveLeft(speed);
-            if (kstate.IsKeyDown(Key.D))
-                Camera.MoveRight(speed);
-            if (kstate.IsKeyDown(Key.Space))
-                Camera.MoveUp(speed);
-            if (kstate.IsKeyDown(Key.ControlLeft))
-                Camera.MoveDown(speed);
-            if (kstate.IsKeyDown(Key.Q))
-                --Camera.ZoomFactor;
-            if (kstate.IsKeyDown(Key.E))
-                ++Camera.ZoomFactor;
-            if (kstate.IsKeyDown(Key.R))
-                ResetCamera();
             if (kstate.IsKeyDown(Key.Number4))
             {
                 if (Camera.IsStereoscopic ^= true)
@@ -391,6 +364,57 @@ namespace OpenTKMinecraft
 
                 Thread.Sleep(KEYBOARD_TOGGLE_DELAY);
             }
+            if (kstate.IsKeyDown(Key.Escape))
+            {
+                if (kstate.IsKeyDown(Key.LShift) || kstate.IsKeyDown(Key.RShift))
+                    Exit();
+
+                IsPaused ^= true;
+
+                Thread.Sleep(KEYBOARD_TOGGLE_DELAY);
+
+                if (!IsPaused)
+                {
+                    _mousex = mstate.X;
+                    _mousey = mstate.Y;
+                    _mousescroll = mstate.WheelPrecise;
+                }
+
+                return;
+            }
+
+            if (IsPaused)
+                return;
+
+            if (kstate.IsKeyDown(Key.ShiftLeft))
+                speed /= 10;
+            if (kstate.IsKeyDown(Key.AltLeft))
+            {
+                speed *= 3;
+
+                Scene.EdgeBlurMode = EdgeBlurMode.RadialBlur;
+            }
+            else
+                Scene.EdgeBlurMode = EdgeBlurMode.BoxBlur;
+
+            if (kstate.IsKeyDown(Key.W))
+                Camera.MoveForwards(speed);
+            if (kstate.IsKeyDown(Key.S))
+                Camera.MoveBackwards(speed);
+            if (kstate.IsKeyDown(Key.A))
+                Camera.MoveLeft(speed);
+            if (kstate.IsKeyDown(Key.D))
+                Camera.MoveRight(speed);
+            if (kstate.IsKeyDown(Key.Space))
+                Camera.MoveUp(speed);
+            if (kstate.IsKeyDown(Key.ControlLeft))
+                Camera.MoveDown(speed);
+            if (kstate.IsKeyDown(Key.Q))
+                --Camera.ZoomFactor;
+            if (kstate.IsKeyDown(Key.E))
+                ++Camera.ZoomFactor;
+            if (kstate.IsKeyDown(Key.R))
+                ResetCamera();
             if (kstate.IsKeyDown(Key.F))
                 using (Bitmap bmp = new Bitmap(Width, Height))
                 {

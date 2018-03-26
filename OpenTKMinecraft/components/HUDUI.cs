@@ -28,6 +28,10 @@ namespace OpenTKMinecraft.Components.UI
         public event EventHandler<float> HeightChanged;
 
 
+        public Action<HUDControl> BeforeRender { set; private get; }
+
+        public Action<HUDControl> AfterRender { set; private get; }
+
         public List<HUDControl> Childern { get; } = new List<HUDControl>();
 
         public Color ForegroundColor { get; set; }
@@ -112,13 +116,13 @@ namespace OpenTKMinecraft.Components.UI
 
         public float CenterX
         {
-            set => _cx = Max(Height / 2, Min(value, (Parent?.Height ?? float.MaxValue) - (Height / 2)));
+            set => _cx = Max(Width / 2, Min(value, (Parent?.Width ?? float.MaxValue) - (Width / 2)));
             get => _cx;
         }
 
         public float CenterY
         {
-            set => _cy = Max(Width / 2, Min(value, (Parent?.Width ?? float.MaxValue) - (Width / 2)));
+            set => _cy = Max(Height / 2, Min(value, (Parent?.Height ?? float.MaxValue) - (Height / 2)));
             get => _cy;
         }
 
@@ -156,6 +160,8 @@ namespace OpenTKMinecraft.Components.UI
 
         public bool Render(Graphics g, HUDMouseData mouse)
         {
+            BeforeRender?.Invoke(this);
+
             bool cont = Contains(mouse.X, mouse.Y);
             bool pressed = cont && mouse.Pressed;
 
@@ -170,6 +176,8 @@ namespace OpenTKMinecraft.Components.UI
 
             foreach (HUDControl c in Childern)
                 cont |= c?.Render(g, mouse) ?? false;
+
+            AfterRender?.Invoke(this);
 
             return cont;
         }
@@ -317,7 +325,7 @@ namespace OpenTKMinecraft.Components.UI
                 control.Parent = this;
                 control.CenterY = center_y;
                 control.CenterX = Width / 2;
-                control.Width = Width - 2 * Padding;
+                control.Width = Width - (2 * Padding);
             }
 
             return control;
@@ -381,6 +389,7 @@ namespace OpenTKMinecraft.Components.UI
         : HUDTextualControl
         , IHUDClickable
     {
+        internal bool IsOption { set; get; }
         public bool IsChecked { set; get; }
         public bool IsEnabled { set; get; }
 
@@ -395,13 +404,28 @@ namespace OpenTKMinecraft.Components.UI
             Color bg = IsEnabled ? mousedown ? PressedBackgroundColor : mousehover ? HoveredBackgroundColor : BackgroundColor : DisabledBackgroundColor;
             Color fg = IsEnabled ? ForegroundColor : DisabledForegroundColor;
 
-            float h = Height / 2 - 16;
+            int h = (int)((Height / 2) - 16);
 
-            g.FillRectangle(new SolidBrush(bg), 2 + AbsoluteX, h + AbsoluteY, 32, 32);
-            g.DrawRectangle(new Pen(fg), 2 + AbsoluteX, h + AbsoluteY, 32, 32);
+            Rectangle r_in = new Rectangle(2 + (int)AbsoluteX, h + (int)AbsoluteY, 32, 32);
+            Rectangle r_out = new Rectangle(2 + (int)AbsoluteX, h + (int)AbsoluteY, 31, 31);
+            Rectangle r_chk = new Rectangle(9 + (int)AbsoluteX, h + (int)AbsoluteY + 8, 16, 16);
+
+            if (IsOption)
+            {
+                g.FillEllipse(new SolidBrush(bg), r_in);
+                g.DrawEllipse(new Pen(fg), r_out);
+            }
+            else
+            {
+                g.FillRectangle(new SolidBrush(bg), r_in);
+                g.DrawRectangle(new Pen(fg), r_out);
+            }
 
             if (IsChecked)
-                g.FillRectangle(new SolidBrush(fg), 10 + AbsoluteX, h + AbsoluteY + 10, 16, 16);
+                if (IsOption)
+                    g.FillEllipse(new SolidBrush(fg), r_chk);
+                else
+                    g.FillRectangle(new SolidBrush(fg), r_chk);
 
             if (Text is string s)
             {
@@ -500,6 +524,7 @@ namespace OpenTKMinecraft.Components.UI
                     Height = sz.Height,
                     CenterX = Width / 2,
                     Top = hoffs,
+                    IsOption = true,
                     ForegroundColor = ForegroundColor,
                     BackgroundColor = BackgroundColor
                 };
@@ -538,13 +563,6 @@ namespace OpenTKMinecraft.Components.UI
 
         protected override void OnRender(Graphics g, bool mousedown, bool mousehover)
         {
-            RenderBoundingBox(g, BackgroundColor, ForegroundColor);
-
-            //foreach (HUDControl c in Childern)
-            //    if (c is HUDCheckbox cb)
-            //    {
-            //        c.CenterX = c.Width / 2;
-            //    }
         }
     }
 }

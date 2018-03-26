@@ -400,7 +400,7 @@ namespace OpenTKMinecraft
 
             if (kstate.IsKeyDown(Key.ShiftLeft))
                 speed /= 10;
-            if (kstate.IsKeyDown(Key.AltLeft))
+            if (kstate.IsKeyDown(Key.C))
             {
                 speed *= 3;
 
@@ -485,7 +485,7 @@ namespace OpenTKMinecraft
 [S] Move backwards
 [SPACE] Move up
 [CTRL] Move down
-[ALT] Fast movement
+[C] Fast movement
 [SHIFT] Slow movement
 [Q] Zoom out
 [E] Zoom in

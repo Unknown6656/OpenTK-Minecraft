@@ -10,7 +10,7 @@ out vec3 vs_tangent;
 out vec3 vs_normal;
 out vec3 vs_eyedir;
 out vec4 vs_color;
-out mat3 vs_TBN;
+out mat3 vs_iTBN;
 
 
 void main(void)
@@ -20,11 +20,11 @@ void main(void)
     vs_normal = normalize((cam_normalview * vec4(normal, 0)).xyz);
     vs_tangent = normalize((cam_normalview * vec4(tangent, 0)).xyz);
     vs_bitangent = normalize((cam_normalview * vec4(bitangent, 0)).xyz);
-    vs_TBN = transpose(mat3(
+    vs_iTBN = mat3(
         vs_tangent,
         vs_bitangent,
         vs_normal
-    ));
+    );
     vs_worldpos = cam_modelview * vec4(position, 1);
     vs_eyedir = normalize(cam_position - vs_worldpos.xyz);
     vs_texcoord = vec2(vcolor.y, 1 - vcolor.x);

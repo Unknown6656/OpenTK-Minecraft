@@ -19,7 +19,9 @@ namespace OpenTKMinecraft
         public static readonly Spashscreen spscreen = new Spashscreen();
 
         [STAThread]
+#if !DEBUG
         [HandleProcessCorruptedStateExceptions]
+#endif
         public static int Main(string[] args)
         {
             Assembly asm = typeof(MainProgram).Assembly;

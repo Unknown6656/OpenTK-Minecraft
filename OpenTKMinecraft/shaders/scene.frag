@@ -11,7 +11,7 @@ in vec3 vs_tangent;
 in vec3 vs_normal;
 in vec4 vs_color;
 in vec3 vs_eyedir;
-in mat3 vs_TBN;
+in mat3 vs_iTBN;
 
 layout (location = 0) out vec4 color;
 layout (location = 1) out vec4 depth;
@@ -81,7 +81,7 @@ vec3 getrawlightcolor(vec3 p, Light l)
         
         vec3 L = getlightdir(p, l);
         vec3 LD = normalize(l.Direction.xyz);
-        float IL = max(dot(L, -LD), 0); // TODO: Light intensity dependending on direction?
+        float IL = max(dot(L, -LD), 0);
         
         if (l.Mode == LIGHT_POINT)
         {
@@ -125,19 +125,30 @@ FlowInfo initflow(float flow_power, float flow_speed)
 void main(void)
 {
     FlowInfo nfo = initflow(-0.5, 1);
-
     int texmode = nfo.lerpv < FLOW_EPSILON ? MODE_CLAMP : MODE_REPEAT;
+
     vec4 diffuse = _flowtex(TEX_DIFF, vs_texcoord, nfo, texmode);
     vec4 ambient = _flowtex(TEX_AMBT, vs_texcoord, nfo, texmode);
     vec4 glow = _flowtex(TEX_GLOW, vs_texcoord, nfo, texmode);
     vec3 specular = _flowtex(TEX_SPEC, vs_texcoord, nfo, texmode).rgb;
-    vec3 gloss = _flowtex(TEX_GLSS, vs_texcoord, nfo, texmode).rgb * MAX_GLOSS;
+    vec3 gloss = _flowtex(TEX_GLSS, vs_texcoord, nfo, texmode).rgb;
     vec3 N = _flowtex(TEX_NORM, vs_texcoord, nfo, texmode).xyz;
-    vec3 V = vs_TBN * vs_eyedir;
-    vec3 H = normalize(V + N);
+    vec3 V = vs_eyedir;
     
+    if (length(gloss) > FLOW_EPSILON)
+        gloss *= MAX_GLOSS;
+    else
+        gloss = vec3(0);
+
+    if (length(N) > FLOW_EPSILON)
+        N = vs_iTBN * normalize(N);
+    else
+        N = vs_normal;
+
+    N = normalize(N);
+        
     vec4 outcolor = ambient * ambient_brightness * diffuse;
-    
+
     for (int i = 0, maxl = min(light_count, MAX_LIGHTS); i < maxl; ++i)
     {
         Light _light = SceneLights.lights[i];
@@ -147,11 +158,11 @@ void main(void)
             outcolor += vec4(ambient.rgb * light_color * diffuse.rgb, diffuse.a);
         else
         {
-            vec3 L = vs_TBN * getlightdir(vs_worldpos.xyz, _light);
-            vec3 R = reflect(L, N);
+            vec3 L = getlightdir(vs_worldpos.xyz, _light);
+            vec3 R = -reflect(L, N);
             float LN = max(0, dot(L, N));
             float RV = max(0, dot(R, V));
-
+            
             vec3 gloss_factor = vec3(
                 pow(RV, gloss.r),
                 pow(RV, gloss.g),
@@ -160,7 +171,8 @@ void main(void)
             vec3 contribution = light_color * diffuse.xyz * LN;
 
             // TODO : glossiness
-            // contribution += light_color * specular * gloss_factor;
+            if (length(gloss_factor) > 0)
+                contribution += light_color * specular * gloss_factor;
 
             outcolor += vec4(contribution * diffuse.a, 0);
         }

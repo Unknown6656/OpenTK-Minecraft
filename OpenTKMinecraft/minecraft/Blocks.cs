@@ -70,8 +70,11 @@ namespace OpenTKMinecraft.Minecraft
             // TODO
 
             [BlockMaterial.__DEBUG__] = new BlockInfo("__DEBUG__",
-                ("resources/debug.png", TextureType.Diffuse),
-                ("resources/debug.png", TextureType.AmbientOcclusion)
+                ("resources/debug-diff.png", TextureType.Diffuse),
+                ("resources/debug-disp.png", TextureType.Displacement),
+                ("resources/debug-ambt.png", TextureType.AmbientOcclusion),
+                ("resources/debug-spec.png", TextureType.Specular),
+                ("resources/debug-norm.png", TextureType.Normal)
             )
         };
 

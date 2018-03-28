@@ -235,7 +235,7 @@ namespace OpenTKMinecraft.Minecraft
         public override void Render(Camera camera, CameraRenderData data)
         {
             foreach (RenderableBlock b in _blocks.Values.ToArray())
-                b.Render(camera, data);
+                b?.Render(camera, data);
         }
 
         public override void Update(double time, double delta)

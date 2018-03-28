@@ -15,6 +15,7 @@ using OpenTKMinecraft.Components;
 using OpenTKMinecraft.Minecraft;
 
 using static System.Math;
+using System.IO;
 
 namespace OpenTKMinecraft
 {
@@ -236,7 +237,7 @@ namespace OpenTKMinecraft
         {
             MainProgram.spscreen.Text = ("Loading World ...", "Building scene ...");
 
-            World[0, 15, 0].Material = BlockMaterial.__DEBUG__;
+            World[0, 7, 0].Material = BlockMaterial.__DEBUG__;
 
             for (int i = 0; i < 4; ++i)
                 for (int j = 0; j < 4; ++j)
@@ -363,6 +364,13 @@ namespace OpenTKMinecraft
 
                 Thread.Sleep(KEYBOARD_TOGGLE_DELAY);
             }
+            if (kstate.IsKeyDown(Key.Number5))
+            {
+                if (Scene.UsePostEffect ^= true)
+                    Camera.IsStereoscopic = false;
+
+                Thread.Sleep(KEYBOARD_TOGGLE_DELAY);
+            }
             if (kstate.IsKeyDown(Key.Number6))
             {
                 HUD.UseHUD ^= true;
@@ -434,9 +442,16 @@ namespace OpenTKMinecraft
 
                     GL.ReadPixels(0, 0, Width, Height, PixelFormat.Bgr, PixelType.UnsignedByte, data.Scan0);
 
+                    const string dir = "screenshots";
+
+                    if (!Directory.Exists(dir))
+                        Directory.CreateDirectory(dir);
+
                     bmp.UnlockBits(data);
                     bmp.RotateFlip(RotateFlipType.RotateNoneFlipY);
-                    bmp.Save("framebuffer.png");
+                    bmp.Save($"{dir}/Screenshot-{DateTime.Now:yyyy-MM-dd-HH-mm-ss-ffffff}.png");
+
+                    Thread.Sleep(KEYBOARD_TOGGLE_DELAY);
                 }
 
             if (Camera.IsStereoscopic)
@@ -477,7 +492,7 @@ namespace OpenTKMinecraft
 [ESC] Pause
 [SHIFT][ESC] Exit
 [H] Show this help window
-[F] Save screenshot to 'framebuffer.png'
+[F] Take screenshot
 
 [W] Move forwards
 [A] Move left

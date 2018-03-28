@@ -152,10 +152,10 @@ void main(void)
     for (int i = 0, maxl = min(light_count, MAX_LIGHTS); i < maxl; ++i)
     {
         Light _light = SceneLights.lights[i];
-        vec3 light_color = getrawlightcolor(vs_worldpos.xyz, _light);
+        vec3 lcontrib = getrawlightcolor(vs_worldpos.xyz, _light) * diffuse.rgb;
 
         if (_light.Mode == LIGHT_AMBIENT)
-            outcolor += vec4(ambient.rgb * light_color * diffuse.rgb, diffuse.a);
+            outcolor += vec4(ambient.rgb * lcontrib, diffuse.a);
         else
         {
             vec3 L = getlightdir(vs_worldpos.xyz, _light);
@@ -163,16 +163,15 @@ void main(void)
             float LN = max(0, dot(L, N));
             float RV = max(0, dot(R, V));
             
-            vec3 gloss_factor = vec3(
+            vec3 gloss_factor = lcontrib * specular * vec3(
                 pow(RV, gloss.r),
                 pow(RV, gloss.g),
                 pow(RV, gloss.b)
             );
-            vec3 contribution = light_color * diffuse.xyz * LN;
-
-            // TODO : glossiness
+            vec3 contribution = lcontrib * LN;
+            
             if (length(gloss_factor) > 0)
-                contribution += light_color * specular * gloss_factor;
+                contribution += gloss_factor;
 
             outcolor += vec4(contribution * diffuse.a, 0);
         }

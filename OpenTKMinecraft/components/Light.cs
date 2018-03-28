@@ -1,5 +1,7 @@
 ﻿using System.Runtime.InteropServices;
+using System.Collections.Generic;
 using System.Linq;
+using System.IO;
 using System;
 
 using OpenTK.Graphics.OpenGL4;
@@ -13,6 +15,7 @@ namespace OpenTKMinecraft.Components
 {
     public unsafe sealed class Lights
         : Renderable
+        , IStorable
     {
         public const int MAX_LIGHTS = 256;
         internal RenderableBlock[] AssocBlocks = new RenderableBlock[MAX_LIGHTS];
@@ -64,7 +67,10 @@ namespace OpenTKMinecraft.Components
         public void Remove(int i)
         {
             if ((i < MAX_LIGHTS) && (i >= 0))
-                LightData[i].IsActive = false;
+            {
+                LightData[i].IsActive = default;
+                AssocBlocks[i] = null;
+            }
         }
 
         public int Add(Light? light, RenderableBlock assoc_block = null)
@@ -107,6 +113,40 @@ namespace OpenTKMinecraft.Components
             GL.DeleteBuffer(_buffer);
 
             base.Dispose(disposing);
+        }
+
+        public void Store(BinaryWriter w)
+        {
+            List<LightData> lights = new List<LightData>();
+
+            for (int i = 0; i < MAX_LIGHTS; ++i)
+                if (AssocBlocks[i] is null && LightData[i].IsActive)
+                    lights.Add(new LightData(LightData[i]));
+
+            w.Write(lights.Count);
+
+            foreach (LightData l in lights)
+                l.Store(w);
+        }
+
+        public void Read(BinaryReader r)
+        {
+            for (int i = 0; i < MAX_LIGHTS; ++i)
+                Remove(i);
+
+            int cnt = r.ReadInt32();
+
+            while (cnt > 0)
+            {
+                LightData ld = default;
+
+                ld.Read(r);
+                ld.TransferTo(out Light l);
+
+                Add(l);
+
+                --cnt;
+            }
         }
     }
 

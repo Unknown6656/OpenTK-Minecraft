@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.IO;
 using System;
 
 using OpenTKMinecraft.Components;
@@ -17,6 +18,7 @@ namespace OpenTKMinecraft.Minecraft
         : IUpdatable
         , IRenderable
         , IDisposable
+        , IStorable
     {
         private Chunk[] _chunks; // for speed-up only
 
@@ -134,6 +136,53 @@ namespace OpenTKMinecraft.Minecraft
 
             return null;
         }
+
+        public void Store(BinaryWriter w)
+        {
+            List<RenderableBlockData> dat = new List<RenderableBlockData>();
+
+            foreach ((long x, long y, long z) ccoord in Chunks.Keys)
+                switch (Chunks[ccoord])
+                {
+                    case SparseChunk sparse:
+                        foreach ((long x, long y, long z) bcoord in sparse._blocks.Keys)
+                        {
+                            RenderableBlock block = sparse._blocks[bcoord];
+
+                            dat.Add(new RenderableBlockData(ccoord, bcoord, block));
+                        }
+
+                        break;
+                    case DenseChunk dense:
+                        for (long z = 0; z < CHUNK_SIZE; ++z)
+                            for (long y = 0; y < CHUNK_SIZE; ++y)
+                                for (long x = 0; x < CHUNK_SIZE; ++x)
+                                    if (dense[x, y, z] is RenderableBlock block)
+                                        dat.Add(new RenderableBlockData(ccoord, (x, y, z), block));
+
+                        break;
+                }
+
+            w.Write(dat.LongCount());
+
+            foreach (RenderableBlockData rbd in dat)
+                rbd.Store(w);
+        }
+
+        public void Read(BinaryReader r)
+        {
+            Chunks.Clear();
+
+            long cnt = r.ReadInt64();
+
+            for (long i = 0; i < cnt; ++i)
+            {
+                RenderableBlockData dat = default;
+
+                dat.Read(r);
+                dat.SpawnInto(this);
+            }
+        }
     }
 
     public abstract class Chunk
@@ -215,7 +264,7 @@ namespace OpenTKMinecraft.Minecraft
     public sealed class SparseChunk
         : Chunk
     {
-        private readonly Dictionary<(long, long, long), RenderableBlock> _blocks = new Dictionary<(long, long, long), RenderableBlock>();
+        internal readonly Dictionary<(long, long, long), RenderableBlock> _blocks = new Dictionary<(long, long, long), RenderableBlock>();
 
 
         public SparseChunk(World world, long ix, long iy, long iz)
@@ -336,7 +385,7 @@ namespace OpenTKMinecraft.Minecraft
         private int _lightindex = -1;
         private float _falling;
 
-        public (Vector3 Min, Vector3 Max)? AABB { get; private protected set; }
+        public (Vector3 Min, Vector3 Max)? AABB { get; internal protected set; }
         public Chunk Chunk { get; }
         public World World { get; }
         public long X { get; }
@@ -420,7 +469,7 @@ namespace OpenTKMinecraft.Minecraft
                 if (!HasBlockBelow)
                 {
                     _falling = Math.Min(_falling, .025f);
-                    _falling *= (float)(1 + delta * 9.81 * _falling);
+                    _falling *= 1 + (float)(delta * 9.81 * _falling);
 
                     Vector4 npos = Position - _falling * Vector4.UnitY;
                     long nx = (long)npos.X;

@@ -63,6 +63,8 @@
     <Compile Include="components\TextureSet.cs" />
     <Compile Include="components\Camera.cs" />
     <Compile Include="components\HUD.cs" />
+    <Compile Include="minecraft\IO.cs" />
+    <Compile Include="minecraft\Player.cs" />
     <Compile Include="Native.cs" />
     <Compile Include="components\Scene.cs" />
     <Compile Include="components\Light.cs" />

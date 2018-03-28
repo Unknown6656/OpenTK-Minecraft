@@ -235,6 +235,12 @@ namespace OpenTKMinecraft
 
         internal void BuildScene()
         {
+            World[0, 10, 0].Material = BlockMaterial.Sand;
+            World[0, 0, 0].Material = BlockMaterial.__DEBUG__;
+
+            return;
+
+
             MainProgram.spscreen.Text = ("Loading World ...", "Building scene ...");
 
             World[0, 7, 0].Material = BlockMaterial.__DEBUG__;

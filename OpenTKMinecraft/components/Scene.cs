@@ -1,4 +1,5 @@
-﻿using System;
+﻿using System.IO;
+using System;
 
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Graphics;
@@ -16,6 +17,7 @@ namespace OpenTKMinecraft.Components
         : Renderable
         , IVisuallyUpdatable
         , IShaderTarget
+        , IStorable
     {
         public Camera Camera { set; get; }
         public float Brightness { set; get; }
@@ -123,5 +125,21 @@ namespace OpenTKMinecraft.Components
         }
 
         public int AddLight(Light? light, RenderableBlock assoc_block = null) => Lights.Add(light, assoc_block);
+
+        public void Store(BinaryWriter w)
+        {
+            w.Write(Brightness);
+
+            World.Store(w);
+            Lights.Store(w);
+        }
+
+        public void Read(BinaryReader r)
+        {
+            Brightness = r.Read();
+
+            World.Read(r);
+            Lights.Read(r);
+        }
     }
 }

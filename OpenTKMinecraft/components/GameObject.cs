@@ -27,12 +27,12 @@ namespace OpenTKMinecraft.Components
         private static ulong _gameobjectcounter;
         private protected Matrix4 _modelview;
 
-        public Renderable Model { get; private protected set; }
-        public Vector3 Rotation { get; private protected set; }
-        public Vector3 Scale { get; private protected set; }
-        public Vector4 Direction { get; private protected set; }
-        public Vector4 Position { get; private protected set; }
-        public float Velocity { get; private protected set; }
+        public Renderable Model { get; internal protected set; }
+        public Vector3 Rotation { get; internal protected set; }
+        public Vector3 Scale { get; internal protected set; }
+        public Vector4 Direction { get; internal protected set; }
+        public Vector4 Position { get; internal protected set; }
+        public float Velocity { get; internal protected set; }
         public Matrix4 ModelView => _modelview;
         public ulong ID { get; }
 

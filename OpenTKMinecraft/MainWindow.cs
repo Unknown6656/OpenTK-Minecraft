@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿#define SYNCRONIZED_RENDER_AND_UPDATE
+
+using System.Collections.Generic;
 using System.Windows.Forms;
 using System.Threading;
 using System.Drawing;
@@ -313,7 +315,11 @@ namespace OpenTKMinecraft
             PauseScreen.CenterY = Height / 2f;
         }
 
+#if SYNCRONIZED_RENDER_AND_UPDATE
         private new void OnUpdateFrame(FrameEventArgs e)
+#else
+        protected override void OnUpdateFrame(FrameEventArgs e)
+#endif
         {
             HandleInput(e.Time);
 
@@ -342,7 +348,9 @@ namespace OpenTKMinecraft
                 foreach (Action a in _queue)
                     a();
 
+#if SYNCRONIZED_RENDER_AND_UPDATE
             OnUpdateFrame(e);
+#endif
         }
 
         internal void HandleInput(double delta)

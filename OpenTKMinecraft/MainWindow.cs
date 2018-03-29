@@ -95,7 +95,7 @@ namespace OpenTKMinecraft
             Scene.Object.AddLight(Light.CreateDirectionalLight(new Vector3(-1, -1, 0), Color.WhiteSmoke));
             Scene.Object.AddLight(Light.CreatePointLight(new Vector3(0, 0, 2), Color.Wheat, 10));
 
-            // BuildScene();
+            BuildScene();
             ResetCamera();
 
             CursorVisible = false;
@@ -105,8 +105,6 @@ namespace OpenTKMinecraft
             MainProgram.spscreen.Text = ("Finished.", "");
             Thread.Sleep(500);
             MainProgram.spscreen.Close();
-
-            Scene.Object.Deserialize(File.ReadAllBytes("scene.dat"));
 
             ShowHelp();
         }
@@ -237,15 +235,10 @@ namespace OpenTKMinecraft
 
         internal void BuildScene()
         {
-            //World[0, 10, 0].Material = BlockMaterial.Sand;
-            //World[0, 0, 0].Material = BlockMaterial.__DEBUG__;
-
-            //return;
-
-
             MainProgram.spscreen.Text = ("Loading World ...", "Building scene ...");
 
-            World[0, 7, 0].Material = BlockMaterial.__DEBUG__;
+            World.Clear();
+            World[0, 15, 0].Material = BlockMaterial.__DEBUG__;
 
             for (int i = 0; i < 4; ++i)
                 for (int j = 0; j < 4; ++j)
@@ -261,7 +254,7 @@ namespace OpenTKMinecraft
 
                     if ((i * i + j * j) < 15)
                     {
-                        World[i, y, j].Material = BlockMaterial.Sand;
+                        World[i, y + 10, j].Material = BlockMaterial.Sand;
                         World[i, y - 1, j].Material = BlockMaterial.Grass;
                     }
                     else
@@ -320,9 +313,9 @@ namespace OpenTKMinecraft
             PauseScreen.CenterY = Height / 2f;
         }
 
-        protected override void OnUpdateFrame(FrameEventArgs e)
+        private new void OnUpdateFrame(FrameEventArgs e)
         {
-            HandleInput();
+            HandleInput(e.Time);
 
             if (IsPaused)
                 PausedTime += e.Time;
@@ -348,16 +341,18 @@ namespace OpenTKMinecraft
             lock (_queue)
                 foreach (Action a in _queue)
                     a();
+
+            OnUpdateFrame(e);
         }
 
-        internal void HandleInput()
+        internal void HandleInput(double delta)
         {
             KeyboardState kstate = Keyboard.GetState();
             MouseState mstate = Mouse.GetState();
             int δx = _mousex - mstate.X;
             int δy = _mousey - mstate.Y;
             float δs = _mousescroll - mstate.WheelPrecise;
-            float speed = .075f;
+            float speed = 15 * (float)delta; // == 15 m/s
 
             if (kstate.IsKeyDown(Key.H))
             {
@@ -425,6 +420,12 @@ namespace OpenTKMinecraft
             else
                 Scene.EdgeBlurMode = EdgeBlurMode.BoxBlur;
 
+            if (kstate.IsKeyDown(Key.U))
+            {
+                BuildScene();
+
+                Thread.Sleep(KEYBOARD_TOGGLE_DELAY);
+            }
             if (kstate.IsKeyDown(Key.W))
                 Camera.MoveForwards(speed);
             if (kstate.IsKeyDown(Key.S))

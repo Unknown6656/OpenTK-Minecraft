@@ -1,4 +1,5 @@
-﻿using System;
+﻿using System.IO;
+using System;
 
 using OpenTK.Graphics.OpenGL4;
 using OpenTK;
@@ -8,7 +9,6 @@ using OpenTKMinecraft.Native;
 
 namespace OpenTKMinecraft.Components
 {
-    using System.IO;
     using static System.Math;
     using static SHADER_BIND_LOCATIONS;
 
@@ -26,6 +26,7 @@ namespace OpenTKMinecraft.Components
     public class CameraRenderData
     {
         public CameraStereoMode StereoMode { set; get; }
+        public CameraRenderMode RenderMode { set; get; }
         public Matrix4? Projection { set; get; }
     }
 
@@ -70,7 +71,7 @@ namespace OpenTKMinecraft.Components
         internal void Render(GameObject obj, CameraRenderData data)
         {
             Matrix4 _mview = obj.ModelView;
-            Matrix4 _projection = (data?.Projection ?? Projection) * Perspective;
+            Matrix4 _projection = (data?.Projection != Matrix4.Zero ? data?.Projection ?? Projection : Projection) * Perspective;
             Matrix4 _mnormal = Matrix4.Transpose(Matrix4.Invert(_mview));
 
             GL.UniformMatrix4(CAMERA_PROJECTION, false, ref _projection);
@@ -517,5 +518,15 @@ namespace OpenTKMinecraft.Components
         Normal = 0,
         LeftEye = 1,
         RightEye = 2,
+    }
+
+    [Flags]
+    public enum CameraRenderMode
+        : uint
+    {
+        None = 0,
+        OpaqueOnly = 1,
+        TransparentOnly = 2,
+        AllItems = OpaqueOnly | TransparentOnly
     }
 }

@@ -10,38 +10,44 @@ namespace OpenTKMinecraft
         {
             set
             {
-                while (Handle == IntPtr.Zero)
-                    Application.DoEvents();
-
-                Invoke(new MethodInvoker(() =>
+                if (!IsDisposed)
                 {
-                    label1.Text = value?.Trim() ?? "";
+                    while (Handle == IntPtr.Zero)
+                        Application.DoEvents();
 
-                    Update();
+                    Invoke(new MethodInvoker(() =>
+                    {
+                        label1.Text = value?.Trim() ?? "";
 
-                    Application.DoEvents();
-                }));
+                        Update();
+
+                        Application.DoEvents();
+                    }));
+                }
             }
-            get => label1.Text;
+            get => IsDisposed ? null : label1.Text;
         }
 
         public string Subtitle
         {
             set
             {
-                while (Handle == IntPtr.Zero)
-                    Application.DoEvents();
-
-                Invoke(new MethodInvoker(() =>
+                if (!IsDisposed)
                 {
-                    label2.Text = value?.Trim() ?? "";
+                    while (Handle == IntPtr.Zero)
+                        Application.DoEvents();
 
-                    Update();
+                    Invoke(new MethodInvoker(() =>
+                    {
+                        label2.Text = value?.Trim() ?? "";
 
-                    Application.DoEvents();
-                }));
+                        Update();
+
+                        Application.DoEvents();
+                    }));
+                }
             }
-            get => label2.Text;
+            get => IsDisposed ? null : label2.Text;
         }
 
         new public (string Title, string Subtitle) Text

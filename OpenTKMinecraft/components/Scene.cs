@@ -80,7 +80,6 @@ namespace OpenTKMinecraft.Components
             GL.LineWidth(2f);
             GL.PointSize(2f);
             // GL.PatchParameter(PatchParameterInt.PatchVertices, 4);
-
             GL.VertexAttrib1(WINDOW_TIME, time);
             GL.Uniform1(WINDOW_WIDTH, width);
             GL.Uniform1(WINDOW_HEIGHT, height);
@@ -90,6 +89,8 @@ namespace OpenTKMinecraft.Components
             GL.Uniform1(SCENE_ENVIRONMENT_AMBIENTBRIGHTNESS, Math.Max(0, Math.Min(Brightness, 1)));
 
             Lights.Render();
+
+            // TODO : render first opaque, then transparent objects
 
             if (Camera.IsStereoscopic)
             {

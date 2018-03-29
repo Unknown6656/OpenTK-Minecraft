@@ -183,6 +183,14 @@ namespace OpenTKMinecraft.Minecraft
                 dat.SpawnInto(this);
             }
         }
+
+        public void Clear()
+        {
+            foreach (Chunk c in Chunks.Values.ToArray())
+                c?.Dispose();
+
+            Chunks.Clear();
+        }
     }
 
     public abstract class Chunk
@@ -193,7 +201,7 @@ namespace OpenTKMinecraft.Minecraft
         public const int CHUNK_SWITCH_COUNT = (int)(CHUNK_SIZE * CHUNK_SIZE);
         public const long CHUNK_SIZE = 16;
 
-        public int BlockCount { get; private set; }
+        public int BlockCount { get; internal set; }
         public World World { get; }
         public long XIndex { get; }
         public long YIndex { get; }
@@ -229,6 +237,15 @@ namespace OpenTKMinecraft.Minecraft
 
         protected abstract RenderableBlock GetBlock(long xloc, long yloc, long zloc, bool retnull = false);
 
+        public void Clear()
+        {
+            BlockCount = 0;
+
+            InternalClear();
+        }
+
+        protected abstract void InternalClear();
+
         public abstract void Update(double time, double delta);
 
         public abstract void Render(Camera camera, CameraRenderData data);
@@ -243,14 +260,7 @@ namespace OpenTKMinecraft.Minecraft
             return b;
         }
 
-        protected abstract void InternalDispose();
-
-        public void Dispose()
-        {
-            InternalDispose();
-
-            BlockCount = 0;
-        }
+        public void Dispose() => Clear();
 
         internal MinecraftBlock GetDefaultBlock(long x, long y, long z) => new MinecraftBlock(World, this, (XIndex * CHUNK_SIZE) + x, (YIndex * CHUNK_SIZE) + y, (ZIndex * CHUNK_SIZE) + z);
 
@@ -272,7 +282,7 @@ namespace OpenTKMinecraft.Minecraft
         {
         }
 
-        protected override void InternalDispose()
+        protected override void InternalClear()
         {
             foreach ((long, long, long) key in _blocks.Keys.ToArray())
             {
@@ -289,8 +299,10 @@ namespace OpenTKMinecraft.Minecraft
 
         public override void Update(double time, double delta)
         {
-            foreach (RenderableBlock b in _blocks.Values)
-                b.Update(time, delta);
+            RenderableBlock[] blocks = _blocks.Values.ToArray();
+
+            for (int i = 0, l = blocks.Length; i < l; ++i)
+                blocks[i]?.Update(time, delta);
         }
 
         protected override void SetBlock(long xloc, long yloc, long zloc, RenderableBlock b) => _blocks[(xloc, yloc, zloc)] = b;
@@ -326,6 +338,17 @@ namespace OpenTKMinecraft.Minecraft
         public DenseChunk(World world, long ix, long iy, long iz)
             : base(world, ix, iy, iz) => Blocks = new RenderableBlock[CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE];
 
+        protected override void InternalClear()
+        {
+            for (int x = 0; x < CHUNK_SIZE; ++x)
+                for (int z = 0; z < CHUNK_SIZE; ++z)
+                    for (int y = 0; y < CHUNK_SIZE; ++y)
+                    {
+                        Blocks[x, y, z]?.Dispose();
+                        Blocks[x, y, z] = null;
+                    }
+        }
+
         public override void Update(double time, double delta)
         {
             for (int x = 0; x<CHUNK_SIZE; ++x)
@@ -342,17 +365,6 @@ namespace OpenTKMinecraft.Minecraft
                     for (int y = 0; y<CHUNK_SIZE; ++y)
                         if (Blocks[x, y, z] is RenderableBlock b)
                             b.Render(camera, data);
-        }
-
-        protected override void InternalDispose()
-        {
-            for (int x = 0; x < CHUNK_SIZE; ++x)
-                for (int z = 0; z < CHUNK_SIZE; ++z)
-                    for (int y = 0; y < CHUNK_SIZE; ++y)
-                    {
-                        Blocks[x, y, z]?.Dispose();
-                        Blocks[x, y, z] = null;
-                    }
         }
 
         protected override void SetBlock(long xloc, long yloc, long zloc, RenderableBlock b) => Blocks[xloc, yloc, zloc] = b;
@@ -381,6 +393,8 @@ namespace OpenTKMinecraft.Minecraft
         : GameObject
         , IRenderable
     {
+        internal const float GRAVITY_ACCELERATION = 9.81f / 2;
+
         private BlockMaterial _mat;
         private int _lightindex = -1;
         private float _falling;
@@ -468,22 +482,32 @@ namespace OpenTKMinecraft.Minecraft
             {
                 if (!HasBlockBelow)
                 {
-                    _falling = Math.Min(_falling, .025f);
-                    _falling *= 1 + (float)(delta * 9.81 * _falling);
+                    _falling = Math.Max(_falling, .025f);
+                    _falling += (float)(delta * GRAVITY_ACCELERATION * _falling);
 
                     Vector4 npos = Position - _falling * Vector4.UnitY;
                     long nx = (long)npos.X;
                     long ny = (long)npos.Y;
                     long nz = (long)npos.Z;
 
+                    Position = npos;
+
                     while (World[nx, ny, nz].IsSolid)
-                        ++ny;
+                        if (ny >= Y + 1)
+                            break;
+                        else
+                            ++ny;
 
-                    RenderableBlock newblock = World[nx, ny, nz];
+                    if (ny < Y)
+                    {
+                        RenderableBlock newblock = World[nx, ny, nz];
 
-                    newblock._falling = 0;
+                        MoveDataTo(newblock);
 
-                    MoveDataTo(newblock, time, delta);
+                        newblock._falling = _falling;
+                    }
+                    else
+                        _falling = 0;
                 }
             }
             else
@@ -494,10 +518,22 @@ namespace OpenTKMinecraft.Minecraft
 
         public override string ToString() => $"({X}, {Y}, {Z}) {Material}  [{base.ToString()}]";
 
-        private void MoveDataTo(RenderableBlock newblock, double time, double delta)
+        public override void Render(Camera camera, CameraRenderData data)
+        {
+            if (data?.RenderMode is CameraRenderMode m && (MaterialInfo.Translucent != m.HasFlag(CameraRenderMode.TransparentOnly)))
+                return;
+
+            base.Render(camera, data);
+        }
+
+        private void MoveDataTo(RenderableBlock newblock)
         {
             newblock.Material = Material;
-            newblock.Update(time, delta);
+            newblock.Position = Position;
+            newblock.Rotation = Rotation;
+            newblock.Velocity = Velocity;
+            newblock.Scale = Scale;
+            newblock.AABB = AABB;
 
             Delete();
         }

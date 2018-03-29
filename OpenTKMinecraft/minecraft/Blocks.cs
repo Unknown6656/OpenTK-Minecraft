@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 using OpenTK.Graphics;
 
@@ -13,15 +12,15 @@ namespace OpenTKMinecraft.Minecraft
         public (Color4 color, float intensity, float falloff)? Glow { private set; get; }
         public (string path, TextureType type)[] Textures { get; }
         public bool IsActivelyGlowing => Glow != null;
+        public bool Translucent { get; private set; }
         public bool Gravity { get; private set; }
         public bool Visible { get; private set; }
         public bool Liquid { get; private set; }
         public string Name { get; }
 
-
         static BlockInfo() => Blocks = new Dictionary<BlockMaterial, BlockInfo>
         {
-            [BlockMaterial.Air] = new BlockInfo("Air") { Visible = false },
+            [BlockMaterial.Air] = new BlockInfo("Air") { Visible = false, Translucent = true },
             [BlockMaterial.Stone] = new BlockInfo("Stone",
                 ("resources/stone-diff.png", TextureType.Diffuse),
                 ("resources/stone-disp.png", TextureType.Displacement),
@@ -43,7 +42,7 @@ namespace OpenTKMinecraft.Minecraft
                 ("resources/water-spec.png", TextureType.Specular),
                 ("resources/water-norm.png", TextureType.Normal),
                 ("resources/water-flow.png", TextureType.Flow)
-            ) { Liquid = true },
+            ) { Liquid = true, Translucent = true },
             [BlockMaterial.Sand] = new BlockInfo("Sand",
                 ("resources/sand-diff.png", TextureType.Diffuse),
                 ("resources/sand-disp.png", TextureType.Displacement),

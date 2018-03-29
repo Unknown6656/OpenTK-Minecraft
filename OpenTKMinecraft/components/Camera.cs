@@ -3,10 +3,12 @@
 using OpenTK.Graphics.OpenGL4;
 using OpenTK;
 
+using OpenTKMinecraft.Minecraft;
 using OpenTKMinecraft.Native;
 
 namespace OpenTKMinecraft.Components
 {
+    using System.IO;
     using static System.Math;
     using static SHADER_BIND_LOCATIONS;
 
@@ -28,6 +30,7 @@ namespace OpenTKMinecraft.Components
     }
 
     public abstract class Camera
+        : IStorable
     {
         public CameraView ViewType { set; get; } = CameraView.Perspective;
         public virtual float FocalDistance { internal protected set; get; } = 10;
@@ -79,6 +82,40 @@ namespace OpenTKMinecraft.Components
         }
 
         public void ResetZoom() => ZoomFactor = 60;
+
+        public void Store(BinaryWriter w)
+        {
+            w.Write((int)ViewType);
+            w.Write(FocalDistance);
+            w.Write(FieldOfView);
+            w.Write(EyeSeparation);
+            w.Write(IsStereoscopic);
+            w.WriteV3(Direction);
+            w.WriteV3(Position);
+            w.WriteM4(Perspective);
+            w.WriteM4(Projection);
+
+            InternalStore(w);
+        }
+
+        public void Read(BinaryReader r)
+        {
+            ViewType = (CameraView)r.ReadInt32();
+            FocalDistance = r.ReadSingle();
+            FieldOfView = r.ReadSingle();
+            EyeSeparation = r.ReadSingle();
+            IsStereoscopic = r.ReadBoolean();
+            Direction = r.ReadV3();
+            Position = r.ReadV3();
+            Perspective = r.ReadM4();
+            Projection = r.ReadM4();
+
+            InternalRead(r);
+        }
+
+        protected abstract void InternalStore(BinaryWriter w);
+
+        protected abstract void InternalRead(BinaryReader r);
     }
 
     public abstract class TargetedCamera
@@ -86,7 +123,9 @@ namespace OpenTKMinecraft.Components
     {
         private Vector3 _targ;
 
+
         public sealed override Vector3 Direction => Vector3.Normalize(Target - Position);
+
         public virtual Vector3 Target
         {
             protected set
@@ -95,8 +134,12 @@ namespace OpenTKMinecraft.Components
                 FocalDistance = (value - Position).Length;
             }
             get => _targ;
-
         }
+
+
+        protected override void InternalRead(BinaryReader r) => Target = r.ReadV3();
+
+        protected override void InternalStore(BinaryWriter w) => w.WriteV3(Target);
     }
 
     public sealed class FixedCamera
@@ -135,6 +178,20 @@ namespace OpenTKMinecraft.Components
         {
             Target = new Vector3(TargetObject.Position);
             Position = new Vector3(TargetObject.Position) + Offset * new Vector3(TargetObject.Direction);
+        }
+
+        protected override void InternalRead(BinaryReader r)
+        {
+            base.InternalRead(r);
+
+            Offset = r.ReadV3();
+        }
+
+        protected override void InternalStore(BinaryWriter w)
+        {
+            base.InternalStore(w);
+
+            w.WriteV3(Offset);
         }
     }
 
@@ -425,6 +482,20 @@ namespace OpenTKMinecraft.Components
         {
             VerticalAngle = 0;
             HorizontalAngle = 0;
+        }
+
+        protected override void InternalRead(BinaryReader r)
+        {
+            FixedFocus = r.ReadBoolean();
+            VerticalAngle = r.ReadSingle();
+            HorizontalAngle = r.ReadSingle();
+        }
+
+        protected override void InternalStore(BinaryWriter w)
+        {
+            w.Write(FixedFocus);
+            w.Write(VerticalAngle);
+            w.Write(HorizontalAngle);
         }
     }
 

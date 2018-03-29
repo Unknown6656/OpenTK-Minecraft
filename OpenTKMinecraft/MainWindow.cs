@@ -3,6 +3,7 @@ using System.Windows.Forms;
 using System.Threading;
 using System.Drawing;
 using System.Linq;
+using System.IO;
 using System;
 
 using OpenTK.Graphics.OpenGL4;
@@ -15,7 +16,6 @@ using OpenTKMinecraft.Components;
 using OpenTKMinecraft.Minecraft;
 
 using static System.Math;
-using System.IO;
 
 namespace OpenTKMinecraft
 {
@@ -95,7 +95,7 @@ namespace OpenTKMinecraft
             Scene.Object.AddLight(Light.CreateDirectionalLight(new Vector3(-1, -1, 0), Color.WhiteSmoke));
             Scene.Object.AddLight(Light.CreatePointLight(new Vector3(0, 0, 2), Color.Wheat, 10));
 
-            BuildScene();
+            // BuildScene();
             ResetCamera();
 
             CursorVisible = false;
@@ -105,6 +105,8 @@ namespace OpenTKMinecraft
             MainProgram.spscreen.Text = ("Finished.", "");
             Thread.Sleep(500);
             MainProgram.spscreen.Close();
+
+            Scene.Object.Deserialize(File.ReadAllBytes("scene.dat"));
 
             ShowHelp();
         }
@@ -235,10 +237,10 @@ namespace OpenTKMinecraft
 
         internal void BuildScene()
         {
-            World[0, 10, 0].Material = BlockMaterial.Sand;
-            World[0, 0, 0].Material = BlockMaterial.__DEBUG__;
+            //World[0, 10, 0].Material = BlockMaterial.Sand;
+            //World[0, 0, 0].Material = BlockMaterial.__DEBUG__;
 
-            return;
+            //return;
 
 
             MainProgram.spscreen.Text = ("Loading World ...", "Building scene ...");

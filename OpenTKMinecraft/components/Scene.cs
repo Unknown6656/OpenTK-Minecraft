@@ -132,6 +132,7 @@ namespace OpenTKMinecraft.Components
 
             World.Store(w);
             Lights.Store(w);
+            Camera.Store(w);
         }
 
         public void Read(BinaryReader r)
@@ -140,6 +141,7 @@ namespace OpenTKMinecraft.Components
 
             World.Read(r);
             Lights.Read(r);
+            Camera.Read(r);
         }
     }
 }

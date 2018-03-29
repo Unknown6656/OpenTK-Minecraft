@@ -1,11 +1,11 @@
 ﻿using System.Runtime.InteropServices;
+using System.IO.Compression;
 using System.IO;
 
 using OpenTK.Graphics;
 using OpenTK;
 
 using OpenTKMinecraft.Components;
-using System.IO.Compression;
 
 namespace OpenTKMinecraft.Minecraft
 {
@@ -17,6 +17,9 @@ namespace OpenTKMinecraft.Minecraft
 
     public static class IO
     {
+        private static int BUFFER_SIZE = 64 * 1024;
+
+
         public static T FromBinary<T>(byte[] array)
             where T : IStorable, new()
         {
@@ -77,6 +80,26 @@ namespace OpenTKMinecraft.Minecraft
             w.Write(v.Z);
         }
 
+        public static Vector4 ReadV4(this BinaryReader r)
+        {
+            Vector4 v = Vector4.Zero;
+
+            v.X = r.ReadSingle();
+            v.Y = r.ReadSingle();
+            v.Z = r.ReadSingle();
+            v.W = r.ReadSingle();
+
+            return v;
+        }
+
+        public static void WriteV4(this BinaryWriter w, Vector4 v)
+        {
+            w.Write(v.X);
+            w.Write(v.Y);
+            w.Write(v.Z);
+            w.Write(v.W);
+        }
+
         public static Color4 ReadC4(this BinaryReader r)
         {
             Color4 c = Color4.Transparent;
@@ -97,32 +120,63 @@ namespace OpenTKMinecraft.Minecraft
             w.Write(c.B);
         }
 
+        public static Matrix4 ReadM4(this BinaryReader r)
+        {
+            Vector4 r0 = r.ReadV4();
+            Vector4 r1 = r.ReadV4();
+            Vector4 r2 = r.ReadV4();
+            Vector4 r3 = r.ReadV4();
+
+            return new Matrix4(r0, r1, r2, r3);
+        }
+
+        public static void WriteM4(this BinaryWriter w, Matrix4 m)
+        {
+            w.WriteV4(m.Row0);
+            w.WriteV4(m.Row1);
+            w.WriteV4(m.Row2);
+            w.WriteV4(m.Row3);
+        }
+
         public static byte[] Serialize(this Scene sc)
         {
+            using (MemoryStream ms = new MemoryStream())
+            using (BinaryWriter wr = new BinaryWriter(ms))
+            {
+                sc.Store(wr);
+
+                return ms.ToArray();
+            }
+        }
+
+        public static void Deserialize(this Scene sc, byte[] arr)
+        {
+            using (MemoryStream ms = new MemoryStream(arr))
+            using (BinaryReader rd = new BinaryReader(ms))
+                sc.Read(rd);
+        }
+
+        public static byte[] Unzip(byte[] arr)
+        {
+            using (MemoryStream ms = new MemoryStream(arr))
             using (MemoryStream os = new MemoryStream())
             {
-                using (GZipStream zip = new GZipStream(os, CompressionMode.Compress, true))
-                using (MemoryStream ms = new MemoryStream())
-                using (BinaryWriter wr = new BinaryWriter(ms))
-                {
-                    sc.Store(wr);
-                    ms.CopyTo(zip);
-                }
+                using (BufferedStream zip = new BufferedStream(new GZipStream(ms, CompressionMode.Decompress), BUFFER_SIZE))
+                    zip.CopyTo(os);
 
                 return os.ToArray();
             }
         }
 
-        public static void Serialize(this Scene sc, byte[] arr)
+        public static byte[] Zip(byte[] arr)
         {
-            using (MemoryStream ms = new MemoryStream(arr))
-            using (GZipStream zip = new GZipStream(ms, CompressionMode.Decompress))
-            using (MemoryStream os = new MemoryStream())
-            using (BinaryReader rd = new BinaryReader(os))
+            using (MemoryStream ms = new MemoryStream())
             {
-                zip.CopyTo(os);
-                os.Seek(0, SeekOrigin.Begin);
-                sc.Read(rd);
+                using (GZipStream zip = new GZipStream(ms, CompressionMode.Compress))
+                using (BufferedStream bs = new BufferedStream(zip, BUFFER_SIZE))
+                    bs.Write(arr, 0, arr.Length);
+
+                return ms.ToArray();
             }
         }
     }

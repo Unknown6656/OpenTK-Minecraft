@@ -32,8 +32,6 @@
 #define LIGHT_SPOT 2
 #define LIGHT_DIRECTIONAL 3
 
-#define FLOW_EPSILON 0.001
-
 struct Light
 {
     vec4 Position;

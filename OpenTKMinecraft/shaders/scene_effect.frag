@@ -5,7 +5,7 @@ layout (location = 38) uniform int EdgeBlurMode;
 layout (location = 39) uniform int PredefinedEffect;
 
 uniform sampler2D renderedColor;
-uniform sampler2D renderedDepth;
+uniform sampler2D renderedDepthGlow;
 uniform sampler2D renderedEffectiveDepth;
 
 in float vs_time;
@@ -23,6 +23,7 @@ out vec4 color;
 #define FX_EDGE 1
 #define FX_WOBB 2
 #define FX_DEPTH 3
+#define FX_GLOW 4
 
 // compare to  OpenTKMinecraft::Components::EdgeBlurMode
 #define EDGE_NONE 0
@@ -69,6 +70,8 @@ vec4 convolute(vec2 coord, mat3 H, mat3 V, int mode, bool gray)
 
 vec4 getcolor(vec2 coord, int fx)
 {
+    DepthGlowData dgl = fromvec4(texture(renderedDepthGlow, coord));
+
     if (fx == FX_EDGE)
         return texture(renderedColor, coord) - convolute(coord, mat3( 
             1,  2,  1,
@@ -82,30 +85,45 @@ vec4 getcolor(vec2 coord, int fx)
     else if (fx == FX_WOBB)
         return texture(renderedColor, coord + 0.01 * vec2(sin(vs_time + window_width * coord.x / 1.25), cos(vs_time + window_height * coord.y / 1.25)));
     else if (fx == FX_DEPTH)
-        return texture(renderedDepth, coord);
+        return vec4(vec3(dgl.Depth), 1);
+    else if (fx == FX_GLOW)
+        return vec4(vec3(dgl.Glow), 1);
     else
         return texture(renderedColor, coord);
 }
 
+vec4 blur(vec2 coord, int radius, float spread)
+{
+    vec4 sum = vec4(0);
+
+    for (int i = -radius; i <= radius; ++i)
+        for (int j = -radius; j <= radius; ++j)
+            sum += getcolor(uv + spread * vec2(i / window_width, j / window_height), PredefinedEffect);
+
+    return sum / pow(2 * radius + 1, 2);
+}
+
 void main(void)
 {
+    DepthGlowData dgl = fromvec4(texture(renderedDepthGlow, uv));
     color = vec4(0);
 
     float dist = clamp(length(vs_pos * vec2(vs_aspectratio, 1)), 0, 1);
-    float fog = clamp(pow(dist / 1.1, 2) + 0.2 - texture(renderedDepth, uv).r, 0, 1);
+    float fog = clamp(pow(dist / 1.1, 2) + 0.2 - dgl.Depth + dgl.Glow, 0, 1);
     vec4 sum = vec4(0);
-
-    if (PredefinedEffect == FX_NONE)
-        if (EdgeBlurMode == EDGE_BOX)
+    
+    if (PredefinedEffect != FX_NONE)
+        fog = 0;
+    else
+    {
+        if ((dgl.Glow > S_EPSILON) && (dgl._RESERVED_1 > 1 - S_EPSILON))
+        // second expression is to filter out the background color
         {
-            int side = 3;
-
-            for (int i = -side; i <= side; ++i)
-                for (int j = -side; j <= side; ++j)
-                    sum += getcolor(uv + 2 * vec2(i / window_width, j / window_height), PredefinedEffect);
-
-            sum /= pow(2 * side + 1, 2);
+            sum = blur(uv, 4, 3) * 3;
+            fog = 1;
         }
+        else if (EdgeBlurMode == EDGE_BOX)
+            sum = blur(uv, 2, 2);
         else if (EdgeBlurMode == EDGE_RADIAL)
         {
             vec2 tcoord = uv - 0.5;
@@ -121,9 +139,8 @@ void main(void)
         }
         else
             fog = 0;
-    else
-        fog = 0;
-    
+    }
+        
     color = (sum * fog) + (getcolor(uv, PredefinedEffect) * (1 - fog));
 
     if (paused)

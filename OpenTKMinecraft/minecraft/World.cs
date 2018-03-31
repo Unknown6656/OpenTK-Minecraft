@@ -393,7 +393,7 @@ namespace OpenTKMinecraft.Minecraft
         : GameObject
         , IRenderable
     {
-        internal const float GRAVITY_ACCELERATION = 9.81f / 2;
+        internal const float GRAVITY_ACCELERATION = 9.81f;
 
         private BlockMaterial _mat;
         private int _lightindex = -1;

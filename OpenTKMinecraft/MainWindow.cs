@@ -241,6 +241,7 @@ namespace OpenTKMinecraft
 
             World.Clear();
             World[0, 15, 0].Material = BlockMaterial.__DEBUG__;
+            World[10, 4, 10].Material = BlockMaterial.Glowstone;
 
             for (int i = 0; i < 4; ++i)
                 for (int j = 0; j < 4; ++j)

@@ -1,6 +1,30 @@
 ﻿
 const float PI = 3.14159265359;
+const float S_EPSILON = 0.001;
 
+
+struct DepthGlowData
+{
+    float Depth;
+    float Glow;
+    float _RESERVED_1;
+    float _RESERVED_2;
+};
+
+
+vec4 tovec4(DepthGlowData d) -> vec4(d.Depth, d.Glow, d._RESERVED_1, d._RESERVED_2);
+
+DepthGlowData fromvec4(vec4 v)
+{
+    DepthGlowData d;
+
+    d.Depth = v.x;
+    d.Glow = v.y;
+    d._RESERVED_1 = v.z;
+    d._RESERVED_2 = v.w;
+
+    return d;
+}
 
 float atan2(in float y, in float x)
 {

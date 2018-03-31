@@ -248,7 +248,7 @@ namespace OpenTKMinecraft.Components
             Program.Use();
 
             _coltex = GL.GetUniformLocation(Program.ID, "renderedColor");
-            _deptex = GL.GetUniformLocation(Program.ID, "renderedDepth");
+            _deptex = GL.GetUniformLocation(Program.ID, "renderedDepthGlow");
             _edeptex = GL.GetUniformLocation(Program.ID, "renderedEffectiveDepth");
 
             Window.Resize += OnWindowResize;
@@ -404,6 +404,7 @@ namespace OpenTKMinecraft.Components
         Edge = 1,
         Wobbles = 2,
         Depth = 3,
+        Glow = 4,
     }
 
     public enum EdgeBlurMode

@@ -14,7 +14,7 @@ in vec3 vs_eyedir;
 in mat3 vs_iTBN;
 
 layout (location = 0) out vec4 color;
-layout (location = 1) out vec4 depth;
+layout (location = 1) out vec4 depthglow;
 
 
 vec4 _texture(int type, vec2 uv, int mode)
@@ -53,7 +53,7 @@ vec4 _flowtex(int type, vec2 uv, FlowInfo nfo, int mode)
 {
     float val = nfo.lerpv;
 
-    if (val < FLOW_EPSILON)
+    if (val < S_EPSILON)
         return _texture(type, uv, mode);
     else
     {
@@ -125,7 +125,7 @@ FlowInfo initflow(float flow_power, float flow_speed)
 void main(void)
 {
     FlowInfo nfo = initflow(-0.5, 1);
-    int texmode = nfo.lerpv < FLOW_EPSILON ? MODE_CLAMP : MODE_REPEAT;
+    int texmode = nfo.lerpv < S_EPSILON ? MODE_CLAMP : MODE_REPEAT;
 
     vec4 diffuse = _flowtex(TEX_DIFF, vs_texcoord, nfo, texmode);
     vec4 ambient = _flowtex(TEX_AMBT, vs_texcoord, nfo, texmode);
@@ -135,12 +135,12 @@ void main(void)
     vec3 N = _flowtex(TEX_NORM, vs_texcoord, nfo, texmode).xyz;
     vec3 V = vs_eyedir;
     
-    if (length(gloss) > FLOW_EPSILON)
+    if (length(gloss) > S_EPSILON)
         gloss *= MAX_GLOSS;
     else
         gloss = vec3(0);
 
-    if (length(N) > FLOW_EPSILON)
+    if (length(N) > S_EPSILON)
         N = vs_iTBN * normalize(N);
     else
         N = vs_normal;
@@ -178,9 +178,15 @@ void main(void)
     }
 
     vec3 distv = vs_worldpos.xyz / vs_worldpos.w - cam_position;
-    
-    depth = vec4(3 / length(distv));
-    color = vec4(outcolor.xyz * (1 - glow.a) + outcolor.xyz * glow.a, outcolor.a + glow.a);
+    DepthGlowData dgl;
+
+    dgl.Depth = 3 / length(distv);
+    dgl.Glow = length(glow);
+    dgl._RESERVED_1 = 1;
+    dgl._RESERVED_2 = 1;
+
+    depthglow = tovec4(dgl);
+    color = vec4(outcolor.rgb * (1 - glow.a) + glow.rgb * glow.a, outcolor.a + glow.a);
 
     if (cam_eye == CAM_LEFT)
         color.r = 0;

@@ -92,13 +92,24 @@ vec4 getcolor(vec2 coord, int fx)
         return texture(renderedColor, coord);
 }
 
-vec4 blur(vec2 coord, int radius, float spread)
+vec4 blur(vec2 coord, int radius, float spread, bool bloom)
 {
     vec4 sum = vec4(0);
 
     for (int i = -radius; i <= radius; ++i)
         for (int j = -radius; j <= radius; ++j)
-            sum += getcolor(uv + spread * vec2(i / window_width, j / window_height), PredefinedEffect);
+        {
+            vec2 nuv = uv + spread * vec2(i / window_width, j / window_height);
+
+            if (bloom)
+            {
+                DepthGlowData dgl = fromvec4(texture(renderedDepthGlow, nuv));
+                
+                sum += getcolor(nuv, PredefinedEffect) * dgl.Glow * dgl._RESERVED_1;
+            }
+            else
+                sum += getcolor(nuv, PredefinedEffect);
+        }
 
     return sum / pow(2 * radius + 1, 2);
 }
@@ -110,20 +121,18 @@ void main(void)
 
     float dist = clamp(length(vs_pos * vec2(vs_aspectratio, 1)), 0, 1);
     float fog = clamp(pow(dist / 1.1, 2) + 0.2 - dgl.Depth + dgl.Glow, 0, 1);
+    vec4 bloom = vec4(0);
     vec4 sum = vec4(0);
     
     if (PredefinedEffect != FX_NONE)
         fog = 0;
     else
     {
-        if ((dgl.Glow > S_EPSILON) && (dgl._RESERVED_1 > 1 - S_EPSILON))
-        // second expression is to filter out the background color
-        {
-            sum = blur(uv, 4, 3) * 3;
-            fog = 1;
-        }
-        else if (EdgeBlurMode == EDGE_BOX)
-            sum = blur(uv, 2, 2);
+        bloom = blur(uv, 1, 2, true);
+        bloom *= max(0.5, 1.5 - dgl.Depth) + sin(vs_time * 4) / 4 + 0.3;
+        
+        if (EdgeBlurMode == EDGE_BOX)
+            sum = blur(uv, 2, 2, false);
         else if (EdgeBlurMode == EDGE_RADIAL)
         {
             vec2 tcoord = uv - 0.5;
@@ -141,7 +150,7 @@ void main(void)
             fog = 0;
     }
         
-    color = (sum * fog) + (getcolor(uv, PredefinedEffect) * (1 - fog));
+    color = (sum * fog) + (getcolor(uv, PredefinedEffect) * (1 - fog)) + bloom;
 
     if (paused)
         color = grayscale(color);

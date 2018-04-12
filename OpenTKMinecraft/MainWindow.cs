@@ -1,6 +1,8 @@
 ﻿#define SYNCRONIZED_RENDER_AND_UPDATE
 
+using System.Windows.Media.Imaging;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Threading;
 using System.Drawing;
@@ -18,6 +20,8 @@ using OpenTKMinecraft.Components;
 using OpenTKMinecraft.Minecraft;
 
 using static System.Math;
+
+using WM = System.Windows.Media;
 
 namespace OpenTKMinecraft
 {
@@ -454,23 +458,63 @@ namespace OpenTKMinecraft
             if (kstate.IsKeyDown(Key.R))
                 ResetCamera();
             if (kstate.IsKeyDown(Key.F))
-                using (Bitmap bmp = new Bitmap(Width, Height))
+            {
+                const string dir = "screenshots";
+
+                if (!Directory.Exists(dir))
+                    Directory.CreateDirectory(dir);
+
+                string path = $"{dir}/Screenshot-{DateTime.Now:yyyy-MM-dd-HH-mm-ss-ffffff}";
+
+                if (kstate.IsKeyDown(Key.LShift) || kstate.IsKeyDown(Key.RShift))
                 {
-                    System.Drawing.Imaging.BitmapData data = bmp.LockBits(new Rectangle(0, 0, Width, Height), System.Drawing.Imaging.ImageLockMode.WriteOnly, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+                    float[] hdr = new float[Width * Height * 4];
+                    const double γ = 2.2;
 
-                    GL.ReadPixels(0, 0, Width, Height, PixelFormat.Bgr, PixelType.UnsignedByte, data.Scan0);
+                    fixed (float* ptr = hdr)
+                        GL.ReadPixels(0, 0, Width, Height, PixelFormat.Rgba, PixelType.Float, (IntPtr)ptr);
 
-                    const string dir = "screenshots";
+                    // convert gamma-corrected to linear
+                    Parallel.For(0, hdr.Length, i => hdr[i] = (float)Pow(hdr[i], γ));
 
-                    if (!Directory.Exists(dir))
-                        Directory.CreateDirectory(dir);
+                    using (FileStream fs = new FileStream($"{path}.tif", FileMode.Create))
+                    {
+                        TiffBitmapEncoder enc = new TiffBitmapEncoder();
 
-                    bmp.UnlockBits(data);
-                    bmp.RotateFlip(RotateFlipType.RotateNoneFlipY);
-                    bmp.Save($"{dir}/Screenshot-{DateTime.Now:yyyy-MM-dd-HH-mm-ss-ffffff}.png");
-
-                    Thread.Sleep(KEYBOARD_TOGGLE_DELAY);
+                        enc.Frames.Add(
+                            BitmapFrame.Create(
+                                new TransformedBitmap(
+                                    BitmapSource.Create(
+                                        Width,
+                                        Height,
+                                        96,
+                                        96,
+                                        WM.PixelFormats.Rgba128Float,
+                                        BitmapPalettes.WebPalette,
+                                        hdr,
+                                        Width * 16
+                                    ),
+                                    new WM.ScaleTransform(1, -1, 0.5, 0.5)
+                                )
+                            )
+                        );
+                        enc.Save(fs);
+                    }
                 }
+                else
+                    using (Bitmap bmp = new Bitmap(Width, Height))
+                    {
+                        System.Drawing.Imaging.BitmapData data = bmp.LockBits(new Rectangle(0, 0, Width, Height), System.Drawing.Imaging.ImageLockMode.WriteOnly, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+
+                        GL.ReadPixels(0, 0, Width, Height, PixelFormat.Bgr, PixelType.UnsignedByte, data.Scan0);
+
+                        bmp.UnlockBits(data);
+                        bmp.RotateFlip(RotateFlipType.RotateNoneFlipY);
+                        bmp.Save($"{path}.png");
+
+                        Thread.Sleep(KEYBOARD_TOGGLE_DELAY);
+                    }
+            }
 
             if (Camera.IsStereoscopic)
             {
@@ -511,6 +555,7 @@ namespace OpenTKMinecraft
 [SHIFT][ESC] Exit
 [H] Show this help window
 [F] Take screenshot
+[SHIFT][F] Take HDR screenshot
 
 [W] Move forwards
 [A] Move left

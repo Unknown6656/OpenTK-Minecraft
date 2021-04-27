@@ -7,6 +7,7 @@ using System.IO;
 using System;
 
 using OpenTK.Graphics.OpenGL4;
+using System.Runtime.InteropServices;
 
 namespace OpenTKMinecraft
 {
@@ -17,6 +18,8 @@ namespace OpenTKMinecraft
         public const string TEMP_DIR = ".tmp";
 
         public static readonly Spashscreen spscreen = new Spashscreen();
+
+       
 
         [STAThread]
 #if !DEBUG

@@ -22,6 +22,9 @@ using OpenTKMinecraft.Minecraft;
 using static System.Math;
 
 using WM = System.Windows.Media;
+using System.Windows.Interop;
+using System.Runtime.InteropServices;
+using System.Text;
 
 namespace OpenTKMinecraft
 {
@@ -55,6 +58,25 @@ namespace OpenTKMinecraft
             WindowBorder = WindowBorder.Resizable;
             WindowState = WindowState.Normal;
         }
+
+        [DllImport("user32.dll")]
+        static extern IntPtr GetForegroundWindow();
+        [DllImport("user32.dll")]
+        static extern int GetWindowText(IntPtr hWnd, StringBuilder text, int count);
+
+        private string GetActiveWindowTitle()
+        {
+            const int nChars = 256;
+            StringBuilder Buff = new StringBuilder(nChars);
+            IntPtr handle = GetForegroundWindow();
+
+            if (GetWindowText(handle, Buff, nChars) > 0)
+            {
+                return Buff.ToString();
+            }
+            return null;
+        }
+
 
         protected override void OnLoad(EventArgs e)
         {
@@ -106,7 +128,7 @@ namespace OpenTKMinecraft
 
             CursorVisible = false;
             VSync = VSyncMode.Off;
-            WindowState = WindowState.Maximized;
+            //WindowState = WindowState.Maximized;
 
             MainProgram.spscreen.Text = ("Finished.", "");
             Thread.Sleep(500);
@@ -261,7 +283,7 @@ namespace OpenTKMinecraft
 
                     if ((i * i + j * j) < 15)
                     {
-                        World[i, y + 10, j].Material = BlockMaterial.Sand;
+                        //World[i, y + 10, j].Material = BlockMaterial.Sand;
                         World[i, y - 1, j].Material = BlockMaterial.Grass;
                     }
                     else
@@ -338,7 +360,8 @@ namespace OpenTKMinecraft
             if (IsPaused)
                 return;
 
-            Scene.Object.Lights[1].Position = Matrix3.CreateRotationY((float)Time) * new Vector3(0, 2, 4);
+            //TODO: Comment this out
+            //Scene.Object.Lights[1].Position = Matrix3.CreateRotationY((float)Time) * new Vector3(0, 2, 4);
             Scene.Update(Time, e.Time, (float)Width / Height);
         }
 
@@ -358,8 +381,11 @@ namespace OpenTKMinecraft
 #endif
         }
 
+       
         internal void HandleInput(double delta)
         {
+            if (GetActiveWindowTitle() != "OpenTK Minecraft") return;
+
             KeyboardState kstate = Keyboard.GetState();
             MouseState mstate = Mouse.GetState();
             int δx = _mousex - mstate.X;
@@ -409,12 +435,14 @@ namespace OpenTKMinecraft
 
                 Thread.Sleep(KEYBOARD_TOGGLE_DELAY);
 
-                if (!IsPaused)
+                /*
+                  	if (!IsPaused)
                 {
                     _mousex = mstate.X;
                     _mousey = mstate.Y;
                     _mousescroll = mstate.WheelPrecise;
                 }
+*/
 
                 return;
             }
@@ -539,7 +567,7 @@ namespace OpenTKMinecraft
             _mousey = mstate.Y;
             _mousescroll = mstate.WheelPrecise;
 
-            System.Windows.Forms.Cursor.Position = new Point(X + (Width / 2), Y + (Height / 2));
+            //System.Windows.Forms.Cursor.Position = new Point(X + (Width / 2), Y + (Height / 2));
         }
 
         public void Invoke(Action a)

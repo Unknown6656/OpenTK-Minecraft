@@ -233,7 +233,7 @@ namespace OpenTKMinecraft.Components
 
             // GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
             GL.Enable(EnableCap.Blend);
-            GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+            GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.OneMinusSrcAlpha);
             GL.BlendEquation(BlendEquationMode.FuncAdd);
             GL.Viewport(0, 0, (int)width, (int)height);
             GL.LineWidth(1);

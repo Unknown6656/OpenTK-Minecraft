@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "does-not-matter": {
+      "commandName": "Project",
+      "hotReloadProfile": "aspnetcore"
+    }
+  }
+}

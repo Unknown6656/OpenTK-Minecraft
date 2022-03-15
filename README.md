@@ -1,6 +1,6 @@
 # OpenTK Minecraft
 This project is a Minecraft clone written mainly in C# and using .NET5. It uses the library [OpenTK](https://github.com/opentk/opentk) as a wrapper for all OpenGL calls.
-This Minecraft clone has been used during the **Microsoft Build Conference 2021** by [Scott Hanselman (@shanselman)](https://github.com/shanselman) for the demonstration of the VisualStudio "Hot Reload" feature (https://youtu.be/EWYYgEkGJfs?t=861).
+This Minecraft clone has been used during the **Microsoft Build Conference 2021** by [Scott Hanselman (@shanselman)](https://github.com/shanselman) for the demonstration of the VisualStudio "Hot Reload" feature (https://youtu.be/EWYYgEkGJfs?t=861).<br/>
 ![image](https://user-images.githubusercontent.com/8807985/119798564-8d241700-bedb-11eb-9932-e388f129e32f.png)
 
 ------------------
